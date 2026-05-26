@@ -3,20 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navItems = [
+const baseItems = [
   { href: "/inicio", label: "Inicio", icon: "🏠" },
   { href: "/partidos", label: "Partidos", icon: "⚽" },
   { href: "/apuestas", label: "Apuestas", icon: "🎲" },
   { href: "/clasificacion", label: "Ranking", icon: "📊" },
 ];
 
-export function BottomNav() {
+const adminItem = { href: "/admin", label: "Admin", icon: "⚙️" };
+
+export function BottomNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
       <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
-        {navItems.map((item) => {
+        {[...baseItems, ...(isAdmin ? [adminItem] : [])].map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
             <Link

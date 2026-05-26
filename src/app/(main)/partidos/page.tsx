@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { MatchCard } from "@/components/match-card";
 
 const stageLabels: Record<string, string> = {
@@ -18,6 +19,8 @@ export default async function PartidosPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
 
   const { data: matches } = await supabase
     .from("matches")

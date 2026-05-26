@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 
 export default async function ClasificacionPage() {
@@ -6,6 +7,8 @@ export default async function ClasificacionPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
 
   const { data: entries } = await supabase
     .from("leaderboard")

@@ -1,12 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function InicioPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
 
   const { data: topEntries } = await supabase
     .from("leaderboard")

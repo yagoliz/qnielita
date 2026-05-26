@@ -16,10 +16,16 @@ export default async function MainLayout({
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single();
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <main className="max-w-lg mx-auto px-4 py-4">{children}</main>
-      <BottomNav />
+      <BottomNav isAdmin={profile?.is_admin ?? false} />
     </div>
   );
 }

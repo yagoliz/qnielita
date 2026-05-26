@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { TournamentBetCard } from "@/components/tournament-bet-card";
 import { CustomBetCard } from "@/components/custom-bet-card";
 import { ApuestasTabs } from "./tabs";
@@ -8,6 +9,8 @@ async function TorneoTab() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
 
   const { data: configs } = await supabase
     .from("tournament_bet_config")
@@ -41,6 +44,8 @@ async function LocasTab() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
 
   const { data: customBets } = await supabase
     .from("custom_bets")
