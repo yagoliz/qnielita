@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 export async function submitMatchPrediction(formData: FormData) {
   const supabase = await createClient();
@@ -42,5 +43,7 @@ export async function submitMatchPrediction(formData: FormData) {
     return { error: error.message };
   }
 
+  revalidatePath("/partidos");
+  revalidatePath("/inicio");
   return { success: true };
 }

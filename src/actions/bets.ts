@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 export async function submitTournamentBet(formData: FormData) {
   const supabase = await createClient();
@@ -31,6 +32,7 @@ export async function submitTournamentBet(formData: FormData) {
     return { error: error.message };
   }
 
+  revalidatePath("/apuestas");
   return { success: true };
 }
 
@@ -63,5 +65,6 @@ export async function submitCustomBetAnswer(formData: FormData) {
     return { error: error.message };
   }
 
+  revalidatePath("/apuestas");
   return { success: true };
 }

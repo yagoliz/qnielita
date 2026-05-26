@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function login(formData: FormData) {
@@ -19,48 +21,53 @@ export async function login(formData: FormData) {
 }
 
 export async function register(formData: FormData) {
-  const supabase = await createClient();
-
   const token = formData.get("token") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const displayName = formData.get("display_name") as string;
 
-  // Validate invite token
-  const { data: invite, error: inviteError } = await supabase
+  // Use service role client to bypass RLS and atomically claim invite
+  const adminClient = createAdminClient();
+
+  // Atomically claim the invite — prevents race condition
+  const { data: invite, error: claimError } = await adminClient
     .from("invites")
-    .select("id, used_by")
+    .update({ used_by: "00000000-0000-0000-0000-000000000000" })
     .eq("token", token)
+    .is("used_by", null)
+    .select("id")
     .single();
 
-  if (inviteError || !invite) {
-    return { error: "Enlace de invitación no válido." };
+  if (claimError || !invite) {
+    return { error: "Enlace de invitación no válido o ya utilizado." };
   }
 
-  if (invite.used_by) {
-    return { error: "Este enlace de invitación ya fue utilizado." };
-  }
-
-  // Create user
-  const { data: authData, error: signUpError } = await supabase.auth.signUp({
+  // Create user via service role (email signups can be disabled in Supabase dashboard)
+  const { data: authData, error: signUpError } = await adminClient.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: { display_name: displayName },
-    },
+    email_confirm: true,
+    user_metadata: { display_name: displayName },
   });
 
   if (signUpError) {
+    // Release the invite claim on failure
+    await adminClient
+      .from("invites")
+      .update({ used_by: null })
+      .eq("id", invite.id);
     return { error: signUpError.message };
   }
 
-  // Mark invite as used
-  if (authData.user) {
-    await supabase
-      .from("invites")
-      .update({ used_by: authData.user.id })
-      .eq("id", invite.id);
-  }
+  // Update invite with actual user ID
+  await adminClient
+    .from("invites")
+    .update({ used_by: authData.user.id })
+    .eq("id", invite.id);
+
+  // Sign in the newly created user
+  const supabase = await createClient();
+  await supabase.auth.signInWithPassword({ email, password });
 
   redirect("/inicio");
 }
@@ -68,5 +75,6 @@ export async function register(formData: FormData) {
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  revalidatePath("/", "layout");
   redirect("/login");
 }

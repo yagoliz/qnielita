@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -46,6 +47,10 @@ export async function submitMatchResult(formData: FormData) {
     );
 
   if (error) return { error: error.message };
+  revalidatePath("/admin");
+  revalidatePath("/partidos");
+  revalidatePath("/clasificacion");
+  revalidatePath("/inicio");
   return { success: true };
 }
 
@@ -77,6 +82,8 @@ export async function createCustomBet(formData: FormData) {
   });
 
   if (error) return { error: error.message };
+  revalidatePath("/admin");
+  revalidatePath("/apuestas");
   return { success: true };
 }
 
@@ -100,6 +107,10 @@ export async function resolveCustomBet(formData: FormData) {
   await supabase.rpc("recalculate_custom_bet_scores", { p_bet_id: betId });
   await supabase.rpc("recalculate_leaderboard");
 
+  revalidatePath("/admin");
+  revalidatePath("/apuestas");
+  revalidatePath("/clasificacion");
+  revalidatePath("/inicio");
   return { success: true };
 }
 
@@ -123,6 +134,10 @@ export async function resolveTournamentBet(formData: FormData) {
   await supabase.rpc("recalculate_tournament_scores", { p_category: category });
   await supabase.rpc("recalculate_leaderboard");
 
+  revalidatePath("/admin");
+  revalidatePath("/apuestas");
+  revalidatePath("/clasificacion");
+  revalidatePath("/inicio");
   return { success: true };
 }
 
@@ -137,5 +152,6 @@ export async function generateInvite() {
 
   if (error) return { error: error.message };
 
+  revalidatePath("/admin");
   return { token: data.token };
 }
