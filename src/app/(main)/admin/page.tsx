@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { ResultEntryForm } from "@/components/admin/result-entry-form";
 import { CustomBetForm } from "@/components/admin/custom-bet-form";
 import { TournamentResolution } from "@/components/admin/tournament-resolution";
 import { InviteManager } from "@/components/admin/invite-manager";
+import { UserOverview } from "@/components/admin/user-overview";
+import type { UserWithStats } from "@/components/admin/user-overview";
 import { AdminTabs } from "./tabs";
 
 export default async function AdminPage() {
@@ -42,6 +45,47 @@ export default async function AdminPage() {
     .select("id, token, used_by, created_at")
     .order("created_at", { ascending: false });
 
+  const adminSupabase = createAdminClient();
+
+  const { data: profiles } = await adminSupabase
+    .from("profiles")
+    .select("id, display_name, avatar_emoji, is_admin, created_at")
+    .order("created_at", { ascending: true });
+
+  const { data: leaderboardRows } = await adminSupabase
+    .from("leaderboard")
+    .select("user_id, total_points, rank");
+
+  const { data: allPredictions } = await adminSupabase
+    .from("match_predictions")
+    .select("user_id");
+
+  const predCountMap = new Map<string, number>();
+  (allPredictions ?? []).forEach((p: { user_id: string }) => {
+    predCountMap.set(p.user_id, (predCountMap.get(p.user_id) ?? 0) + 1);
+  });
+
+  const leaderboardMap = new Map(
+    (leaderboardRows ?? []).map((r: any) => [
+      r.user_id,
+      { total_points: r.total_points, rank: r.rank },
+    ])
+  );
+
+  const usersWithStats: UserWithStats[] = (profiles ?? []).map((p: any) => {
+    const lb = leaderboardMap.get(p.id);
+    return {
+      id: p.id,
+      display_name: p.display_name,
+      avatar_emoji: p.avatar_emoji,
+      is_admin: p.is_admin,
+      created_at: p.created_at,
+      rank: lb?.rank ?? null,
+      total_points: lb?.total_points ?? null,
+      predictions_count: predCountMap.get(p.id) ?? 0,
+    };
+  });
+
   const formattedMatches = (matches ?? []).map((m: any) => ({
     id: m.id,
     kickoff_at: m.kickoff_at,
@@ -56,8 +100,13 @@ export default async function AdminPage() {
       <AdminTabs
         resultadosContent={<ResultEntryForm matches={formattedMatches} />}
         apuestasContent={<CustomBetForm />}
-        torneoContent={<TournamentResolution configs={tournamentConfigs ?? []} />}
+        torneoContent={
+          <TournamentResolution configs={tournamentConfigs ?? []} />
+        }
         invitesContent={<InviteManager invites={invites ?? []} />}
+        usuariosContent={
+          <UserOverview users={usersWithStats} currentUserId={user.id} />
+        }
       />
     </div>
   );

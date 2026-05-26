@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
 async function requireAdmin() {
@@ -154,4 +155,70 @@ export async function generateInvite() {
 
   revalidatePath("/admin");
   return { token: data.token };
+}
+
+export async function toggleUserAdmin(userId: string) {
+  const { supabase, user } = await requireAdmin();
+
+  if (userId === user.id) {
+    return { error: "No puedes cambiar tu propio rol de admin." };
+  }
+
+  const { data: target, error: fetchError } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", userId)
+    .single();
+
+  if (fetchError || !target) return { error: "Usuario no encontrado." };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ is_admin: !target.is_admin })
+    .eq("id", userId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function updateUserProfile(
+  userId: string,
+  data: { display_name?: string; avatar_emoji?: string }
+) {
+  const { supabase } = await requireAdmin();
+
+  const updates: Record<string, string> = {};
+  if (data.display_name?.trim()) updates.display_name = data.display_name.trim();
+  if (data.avatar_emoji?.trim()) updates.avatar_emoji = data.avatar_emoji.trim();
+
+  if (Object.keys(updates).length === 0) {
+    return { error: "No hay cambios." };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update(updates)
+    .eq("id", userId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin");
+  revalidatePath("/clasificacion");
+  return { success: true };
+}
+
+export async function removeUser(userId: string) {
+  const { user } = await requireAdmin();
+
+  if (userId === user.id) {
+    return { error: "No puedes eliminarte a ti mismo." };
+  }
+
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.auth.admin.deleteUser(userId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin");
+  revalidatePath("/clasificacion");
+  return { success: true };
 }
