@@ -27,6 +27,14 @@ export function AdminTabs({
     { key: "usuarios" as const, label: "Usuarios" },
   ];
 
+  const contentMap = {
+    resultados: resultadosContent,
+    apuestas: apuestasContent,
+    torneo: torneoContent,
+    invites: invitesContent,
+    usuarios: usuariosContent,
+  };
+
   return (
     <div>
       <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-4">
@@ -45,11 +53,7 @@ export function AdminTabs({
         ))}
       </div>
 
-      {tab === "resultados" && resultadosContent}
-      {tab === "apuestas" && apuestasContent}
-      {tab === "torneo" && torneoContent}
-      {tab === "invites" && invitesContent}
-      {tab === "usuarios" && usuariosContent}
+      {contentMap[tab]}
     </div>
   );
 }
