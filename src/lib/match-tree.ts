@@ -210,3 +210,49 @@ export function buildMatchTree(
 
   return { groupStage: { groups }, knockout };
 }
+
+export function computeDefaultOpen(tree: MatchTree, now: Date): DefaultOpen {
+  type Candidate = {
+    kickoff: number;
+    groupId?: number;
+    matchdayKey?: string;
+    knockoutStage?: KnockoutStage;
+  };
+
+  const nowMs = now.getTime();
+  const candidates: Candidate[] = [];
+
+  for (const group of tree.groupStage.groups) {
+    for (const md of group.matchdays) {
+      for (const m of md.matches) {
+        const kickoff = new Date(m.kickoff_at).getTime();
+        if (kickoff >= nowMs) {
+          candidates.push({
+            kickoff,
+            groupId: group.id,
+            matchdayKey: md.key,
+          });
+        }
+      }
+    }
+  }
+
+  for (const node of tree.knockout) {
+    for (const m of node.matches) {
+      const kickoff = new Date(m.kickoff_at).getTime();
+      if (kickoff >= nowMs) {
+        candidates.push({ kickoff, knockoutStage: node.stage });
+      }
+    }
+  }
+
+  if (candidates.length === 0) return {};
+
+  candidates.sort((a, b) => a.kickoff - b.kickoff);
+  const next = candidates[0];
+  const open: DefaultOpen = {};
+  if (next.groupId != null) open.groupId = next.groupId;
+  if (next.matchdayKey != null) open.matchdayKey = next.matchdayKey;
+  if (next.knockoutStage != null) open.knockoutStage = next.knockoutStage;
+  return open;
+}

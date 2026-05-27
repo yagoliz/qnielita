@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildMatchTree, type MatchInput } from "./match-tree";
+import { buildMatchTree, computeDefaultOpen, type MatchInput } from "./match-tree";
 
 describe("buildMatchTree", () => {
   it("returns empty tree for empty input", () => {
@@ -122,5 +122,57 @@ describe("buildMatchTree", () => {
     expect(tree.knockout[2].label).toBe("Cuartos de Final");
     expect(tree.knockout[1].matches[0].id).toBe(100);
     expect(tree.knockout[1].totalCount).toBe(1);
+  });
+});
+
+describe("computeDefaultOpen", () => {
+  const groupMatches: MatchInput[] = Array.from({ length: 6 }, (_, i) => ({
+    id: i + 1,
+    kickoff_at: `2026-06-${11 + i}T18:00:00Z`,
+    venue: null,
+    stage: "group",
+    group_id: 1,
+    group_name: "A",
+    home_team: { name: `H${i}`, code: `H${i}` },
+    away_team: { name: `A${i}`, code: `A${i}` },
+  }));
+  const knockoutMatch: MatchInput = {
+    id: 100,
+    kickoff_at: "2026-07-15T18:00:00Z",
+    venue: null,
+    stage: "R16",
+    group_id: null,
+    group_name: null,
+    home_team: { name: "W1A", code: "W1A" },
+    away_team: { name: "R2C", code: "R2C" },
+  };
+
+  it("returns first group J1 when now is before tournament", () => {
+    const tree = buildMatchTree([...groupMatches, knockoutMatch], [], []);
+    const open = computeDefaultOpen(tree, new Date("2026-06-01T00:00:00Z"));
+    expect(open.groupId).toBe(1);
+    expect(open.matchdayKey).toBe("1-1");
+    expect(open.knockoutStage).toBeUndefined();
+  });
+
+  it("opens the group and matchday containing the next upcoming match", () => {
+    const tree = buildMatchTree([...groupMatches, knockoutMatch], [], []);
+    const open = computeDefaultOpen(tree, new Date("2026-06-13T20:00:00Z"));
+    expect(open.groupId).toBe(1);
+    expect(open.matchdayKey).toBe("1-2");
+  });
+
+  it("opens the knockout stage when next upcoming match is knockout", () => {
+    const tree = buildMatchTree([...groupMatches, knockoutMatch], [], []);
+    const open = computeDefaultOpen(tree, new Date("2026-06-17T00:00:00Z"));
+    expect(open.knockoutStage).toBe("R16");
+    expect(open.groupId).toBeUndefined();
+    expect(open.matchdayKey).toBeUndefined();
+  });
+
+  it("returns empty DefaultOpen when tournament is over", () => {
+    const tree = buildMatchTree([...groupMatches, knockoutMatch], [], []);
+    const open = computeDefaultOpen(tree, new Date("2026-08-01T00:00:00Z"));
+    expect(open).toEqual({});
   });
 });
