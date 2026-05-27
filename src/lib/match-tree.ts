@@ -103,3 +103,11 @@ export const KNOCKOUT_LABELS: Record<KnockoutStage, string> = {
 export function matchdayKey(groupId: number, number: 1 | 2 | 3): string {
   return `${groupId}-${number}`;
 }
+
+export function buildMatchTree(
+  matches: MatchInput[],
+  predictions: PredictionInput[],
+  results: ResultInput[]
+): MatchTree {
+  return { groupStage: { groups: [] }, knockout: [] };
+}
