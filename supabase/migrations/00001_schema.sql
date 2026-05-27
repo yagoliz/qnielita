@@ -1,3 +1,6 @@
+-- Extensions
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
 -- Enums
 CREATE TYPE match_stage AS ENUM (
   'group', 'R32', 'R16', 'QF', 'SF', 'third_place', 'final'
@@ -23,7 +26,7 @@ CREATE TABLE profiles (
 -- Invites
 CREATE TABLE invites (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  token TEXT UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(16), 'hex'),
+  token TEXT UNIQUE NOT NULL DEFAULT encode(extensions.gen_random_bytes(16), 'hex'),
   created_by UUID NOT NULL REFERENCES profiles(id),
   used_by UUID REFERENCES profiles(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
