@@ -8,6 +8,7 @@ const baseItems = [
   { href: "/partidos", label: "Partidos", icon: "⚽" },
   { href: "/apuestas", label: "Apuestas", icon: "🎲" },
   { href: "/clasificacion", label: "Ranking", icon: "📊" },
+  { href: "/perfil", label: "Perfil", icon: "👤" },
 ];
 
 const adminItem = { href: "/admin", label: "Admin", icon: "⚙️" };

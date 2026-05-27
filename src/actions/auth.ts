@@ -26,25 +26,40 @@ export async function register(formData: FormData) {
   const password = formData.get("password") as string;
   const displayName = formData.get("display_name") as string;
 
-  // Use service role client to bypass RLS
   const adminClient = createAdminClient();
+  const normalizedEmail = email.toLowerCase().trim();
 
-  // Verify invite exists and is unused
   const { data: invite, error: checkError } = await adminClient
     .from("invites")
-    .select("id")
+    .select("id, allowed_emails, used_by")
     .eq("token", token)
-    .is("used_by", null)
     .single();
 
   if (checkError || !invite) {
     return { error: "Enlace de invitación no válido o ya utilizado." };
   }
 
-  // Create user via service role (email signups can be disabled in Supabase dashboard)
-  // The handle_new_user trigger creates the profile row automatically.
+  const isEmailRestricted = invite.allowed_emails && invite.allowed_emails.length > 0;
+
+  if (isEmailRestricted) {
+    if (!invite.allowed_emails!.includes(normalizedEmail)) {
+      return { error: "Este enlace no es válido para tu correo." };
+    }
+    const { count } = await adminClient
+      .from("invite_claims")
+      .select("id", { count: "exact", head: true })
+      .eq("invite_id", invite.id);
+    if ((count ?? 0) >= invite.allowed_emails!.length) {
+      return { error: "Todas las invitaciones de este enlace ya fueron utilizadas." };
+    }
+  } else {
+    if (invite.used_by) {
+      return { error: "Enlace de invitación no válido o ya utilizado." };
+    }
+  }
+
   const { data: authData, error: signUpError } = await adminClient.auth.admin.createUser({
-    email,
+    email: normalizedEmail,
     password,
     email_confirm: true,
     user_metadata: { display_name: displayName },
@@ -54,24 +69,32 @@ export async function register(formData: FormData) {
     return { error: signUpError.message };
   }
 
-  // Atomically claim the invite with the real user ID (profile exists now, so FK is satisfied)
-  const { data: claimed, error: claimError } = await adminClient
-    .from("invites")
-    .update({ used_by: authData.user.id })
-    .eq("id", invite.id)
-    .is("used_by", null)
-    .select("id")
-    .single();
+  if (isEmailRestricted) {
+    const { error: claimError } = await adminClient
+      .from("invite_claims")
+      .insert({ invite_id: invite.id, user_id: authData.user.id });
 
-  if (claimError || !claimed) {
-    // Race condition: another registration claimed this invite first — clean up
-    await adminClient.auth.admin.deleteUser(authData.user.id);
-    return { error: "Enlace de invitación no válido o ya utilizado." };
+    if (claimError) {
+      await adminClient.auth.admin.deleteUser(authData.user.id);
+      return { error: "Enlace de invitación no válido o ya utilizado." };
+    }
+  } else {
+    const { data: claimed, error: claimError } = await adminClient
+      .from("invites")
+      .update({ used_by: authData.user.id })
+      .eq("id", invite.id)
+      .is("used_by", null)
+      .select("id")
+      .single();
+
+    if (claimError || !claimed) {
+      await adminClient.auth.admin.deleteUser(authData.user.id);
+      return { error: "Enlace de invitación no válido o ya utilizado." };
+    }
   }
 
-  // Sign in the newly created user
   const supabase = await createClient();
-  await supabase.auth.signInWithPassword({ email, password });
+  await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
 
   redirect("/inicio");
 }

@@ -142,12 +142,17 @@ export async function resolveTournamentBet(formData: FormData) {
   return { success: true };
 }
 
-export async function generateInvite() {
+export async function generateInvite(emails?: string[]) {
   const { supabase, user } = await requireAdmin();
+
+  const insertData: Record<string, unknown> = { created_by: user.id };
+  if (emails && emails.length > 0) {
+    insertData.allowed_emails = emails.map((e) => e.toLowerCase().trim());
+  }
 
   const { data, error } = await supabase
     .from("invites")
-    .insert({ created_by: user.id })
+    .insert(insertData)
     .select("token")
     .single();
 

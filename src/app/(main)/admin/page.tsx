@@ -42,10 +42,24 @@ export default async function AdminPage() {
 
   const { data: invites } = await supabase
     .from("invites")
-    .select("id, token, used_by, created_at")
+    .select("id, token, used_by, allowed_emails, created_at")
     .order("created_at", { ascending: false });
 
   const adminSupabase = createAdminClient();
+
+  const { data: claimCounts } = await adminSupabase
+    .from("invite_claims")
+    .select("invite_id");
+
+  const claimCountMap = new Map<string, number>();
+  (claimCounts ?? []).forEach((c: { invite_id: string }) => {
+    claimCountMap.set(c.invite_id, (claimCountMap.get(c.invite_id) ?? 0) + 1);
+  });
+
+  const invitesWithCounts = (invites ?? []).map((inv: any) => ({
+    ...inv,
+    claim_count: claimCountMap.get(inv.id) ?? 0,
+  }));
 
   const { data: profiles } = await adminSupabase
     .from("profiles")
@@ -103,7 +117,7 @@ export default async function AdminPage() {
         torneoContent={
           <TournamentResolution configs={tournamentConfigs ?? []} />
         }
-        invitesContent={<InviteManager invites={invites ?? []} />}
+        invitesContent={<InviteManager invites={invitesWithCounts} />}
         usuariosContent={
           <UserOverview users={usersWithStats} currentUserId={user.id} />
         }
