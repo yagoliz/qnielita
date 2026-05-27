@@ -109,5 +109,78 @@ export function buildMatchTree(
   predictions: PredictionInput[],
   results: ResultInput[]
 ): MatchTree {
-  return { groupStage: { groups: [] }, knockout: [] };
+  const predictionMap = new Map(predictions.map((p) => [p.match_id, p]));
+  const resultMap = new Map(results.map((r) => [r.match_id, r]));
+
+  const enrich = (m: MatchInput): MatchEnriched => {
+    const p = predictionMap.get(m.id);
+    const r = resultMap.get(m.id);
+    return {
+      id: m.id,
+      kickoff_at: m.kickoff_at,
+      venue: m.venue,
+      stage: m.stage,
+      group_id: m.group_id,
+      home_team: m.home_team,
+      away_team: m.away_team,
+      prediction: p
+        ? { home_score: p.home_score, away_score: p.away_score, points_earned: p.points_earned }
+        : undefined,
+      result: r
+        ? { home_score: r.home_score, away_score: r.away_score }
+        : undefined,
+    };
+  };
+
+  const byGroup = new Map<number, { name: string; matches: MatchInput[] }>();
+  for (const m of matches) {
+    if (m.stage !== "group" || m.group_id == null) continue;
+    const entry = byGroup.get(m.group_id) ?? {
+      name: m.group_name ?? "",
+      matches: [],
+    };
+    entry.matches.push(m);
+    byGroup.set(m.group_id, entry);
+  }
+
+  const groups: GroupNode[] = [];
+  for (const [groupId, { name, matches: groupMatches }] of byGroup) {
+    const sorted = [...groupMatches].sort((a, b) =>
+      a.kickoff_at.localeCompare(b.kickoff_at)
+    );
+
+    const matchdays: MatchdayNode[] = [];
+    for (let i = 0; i < sorted.length; i += 2) {
+      const number = (Math.floor(i / 2) + 1) as 1 | 2 | 3;
+      const pair = sorted.slice(i, i + 2).map(enrich);
+      const predictedCount = pair.filter((m) => m.prediction).length;
+      matchdays.push({
+        number,
+        label: `Jornada ${number}`,
+        key: matchdayKey(groupId, number),
+        matches: pair,
+        predictedCount,
+        totalCount: pair.length,
+      });
+    }
+
+    const totalCount = sorted.length;
+    const predictedCount = matchdays.reduce(
+      (sum, md) => sum + md.predictedCount,
+      0
+    );
+
+    groups.push({
+      id: groupId,
+      name,
+      label: `Grupo ${name}`,
+      matchdays,
+      predictedCount,
+      totalCount,
+    });
+  }
+
+  groups.sort((a, b) => a.name.localeCompare(b.name));
+
+  return { groupStage: { groups }, knockout: [] };
 }
