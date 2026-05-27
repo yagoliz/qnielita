@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { LeaderboardTable } from "@/components/leaderboard-table";
+import { MatchPreviewCard } from "@/components/match-preview-card";
 import { fetchFullLeaderboard } from "@/lib/leaderboard";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -35,10 +36,21 @@ export default async function InicioPage() {
 
   const { data: myPredictions } = await supabase
     .from("match_predictions")
-    .select("match_id")
+    .select("match_id, home_score, away_score, points_earned")
     .eq("user_id", user!.id);
 
-  const predictedIds = new Set((myPredictions ?? []).map((p: any) => p.match_id));
+  const predictionsByMatch = new Map<
+    number,
+    { home_score: number; away_score: number; points_earned: number | null }
+  >();
+  (myPredictions ?? []).forEach((p: any) => {
+    predictionsByMatch.set(p.match_id, {
+      home_score: p.home_score,
+      away_score: p.away_score,
+      points_earned: p.points_earned,
+    });
+  });
+  const predictedIds = new Set(predictionsByMatch.keys());
   const pendingCount = (allFutureMatches ?? []).filter(
     (m: any) => !predictedIds.has(m.id)
   ).length;
@@ -139,31 +151,14 @@ export default async function InicioPage() {
             Próximos partidos
           </h2>
           <div className="space-y-2">
-            {upcomingMatches.map((match: any) => {
-              const home = match.home_team;
-              const away = match.away_team;
-              return (
-                <Link
-                  key={match.id}
-                  href="/partidos"
-                  className="block bg-white rounded-lg p-3 shadow-sm border border-gray-100"
-                >
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-medium">
-                      {home?.code} vs {away?.code}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(match.kickoff_at).toLocaleDateString("es", {
-                        day: "numeric",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+            {upcomingMatches.map((match: any) => (
+              <MatchPreviewCard
+                key={match.id}
+                match={match}
+                prediction={predictionsByMatch.get(match.id) ?? null}
+                href="/partidos"
+              />
+            ))}
           </div>
         </div>
       ) : null}
@@ -176,16 +171,14 @@ export default async function InicioPage() {
           <div className="space-y-2">
             {recentResults.map((r: any) => {
               const match = r.match;
+              if (!match) return null;
               return (
-                <div
-                  key={match?.id}
-                  className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 text-sm"
-                >
-                  <span>
-                    {match?.home_team?.code} {r.home_score}-{r.away_score}{" "}
-                    {match?.away_team?.code}
-                  </span>
-                </div>
+                <MatchPreviewCard
+                  key={match.id}
+                  match={match}
+                  prediction={predictionsByMatch.get(match.id) ?? null}
+                  result={{ home_score: r.home_score, away_score: r.away_score }}
+                />
               );
             })}
           </div>

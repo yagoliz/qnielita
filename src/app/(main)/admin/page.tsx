@@ -145,7 +145,7 @@ export default async function AdminPage() {
     home_team: m.home_team as { name: string; code: string },
     away_team: m.away_team as { name: string; code: string },
     group_name: (m.group as { name: string } | null)?.name ?? null,
-    result: m.result?.[0] ?? null,
+    result: m.result ?? null,
   }));
 
   const groupMatches = formattedMatches.filter((m) => m.stage === "group");

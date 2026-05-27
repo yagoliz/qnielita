@@ -1,9 +1,17 @@
 "use client";
 
 import { ScoreInput } from "./score-input";
-import { Countdown } from "./countdown";
 import { submitMatchPrediction } from "@/actions/predictions";
 import { useActionState } from "react";
+
+function formatKickoff(iso: string) {
+  return new Date(iso).toLocaleString("es-ES", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 type MatchCardProps = {
   match: {
@@ -41,7 +49,9 @@ export function MatchCard({ match, prediction, result }: MatchCardProps) {
         <span className="text-xs font-medium text-gray-400 uppercase">
           {match.stage === "group" ? "Grupos" : match.stage}
         </span>
-        <Countdown targetDate={match.kickoff_at} />
+        <span className="text-xs text-gray-400">
+          {formatKickoff(match.kickoff_at)}
+        </span>
       </div>
 
       <form action={formAction}>
