@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { CircleDot, Trophy, Dices } from "lucide-react";
 
 export default async function UserDetailPage({
   params,
@@ -46,7 +47,7 @@ export default async function UserDetailPage({
       {leaderboardEntry && (
         <p className="text-sm text-gray-500 mb-4">
           Puesto #{leaderboardEntry.rank} — {leaderboardEntry.total_points} pts
-          (⚽ {leaderboardEntry.match_points} | 🏆 {leaderboardEntry.tournament_points} | 🎲 {leaderboardEntry.custom_points})
+          (<CircleDot className="size-3.5 inline" /> {leaderboardEntry.match_points} | <Trophy className="size-3.5 inline" /> {leaderboardEntry.tournament_points} | <Dices className="size-3.5 inline" /> {leaderboardEntry.custom_points})
         </p>
       )}
 

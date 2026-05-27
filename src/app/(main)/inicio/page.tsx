@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Trophy, AlertTriangle } from "lucide-react";
 
 export default async function InicioPage() {
   const supabase = await createClient();
@@ -65,7 +66,7 @@ export default async function InicioPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold">Qnielita ⚽</h1>
+        <h1 className="text-xl font-bold flex items-center gap-1.5">Qnielita <Trophy className="size-5 text-green-600" /></h1>
         <p className="text-sm text-gray-500">Porra Mundial 2026</p>
       </div>
 
@@ -84,7 +85,8 @@ export default async function InicioPage() {
           className="block bg-yellow-50 rounded-xl p-4 border border-yellow-200"
         >
           <p className="text-sm text-yellow-800">
-            ⚠️ Tienes <span className="font-bold">{pendingCount} partidos</span> sin
+            <AlertTriangle className="size-4 inline mr-1" />
+            Tienes <span className="font-bold">{pendingCount} partidos</span> sin
             predicción.
           </p>
         </Link>

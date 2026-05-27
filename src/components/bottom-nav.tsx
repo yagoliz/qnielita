@@ -2,16 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Home,
+  CalendarDays,
+  Dices,
+  BarChart3,
+  User,
+  Settings,
+  type LucideIcon,
+} from "lucide-react";
 
-const baseItems = [
-  { href: "/inicio", label: "Inicio", icon: "🏠" },
-  { href: "/partidos", label: "Partidos", icon: "⚽" },
-  { href: "/apuestas", label: "Apuestas", icon: "🎲" },
-  { href: "/clasificacion", label: "Ranking", icon: "📊" },
-  { href: "/perfil", label: "Perfil", icon: "👤" },
+const baseItems: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/inicio", label: "Inicio", icon: Home },
+  { href: "/partidos", label: "Partidos", icon: CalendarDays },
+  { href: "/apuestas", label: "Apuestas", icon: Dices },
+  { href: "/clasificacion", label: "Ranking", icon: BarChart3 },
+  { href: "/perfil", label: "Perfil", icon: User },
 ];
 
-const adminItem = { href: "/admin", label: "Admin", icon: "⚙️" };
+const adminItem = { href: "/admin", label: "Admin", icon: Settings };
 
 export function BottomNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
@@ -21,6 +30,7 @@ export function BottomNav({ isAdmin = false }: { isAdmin?: boolean }) {
       <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
         {[...baseItems, ...(isAdmin ? [adminItem] : [])].map((item) => {
           const isActive = pathname.startsWith(item.href);
+          const Icon = item.icon;
           return (
             <Link
               key={item.href}
@@ -31,7 +41,7 @@ export function BottomNav({ isAdmin = false }: { isAdmin?: boolean }) {
                   : "text-gray-500"
               }`}
             >
-              <span className="text-xl">{item.icon}</span>
+              <Icon className="size-5" strokeWidth={isActive ? 2.5 : 2} />
               <span>{item.label}</span>
             </Link>
           );

@@ -2,6 +2,7 @@
 
 import { generateInvite } from "@/actions/admin";
 import { useState } from "react";
+import { Check, CheckCircle, Clock } from "lucide-react";
 
 type Invite = {
   id: string;
@@ -26,7 +27,7 @@ function CopyButton({ text }: { text: string }) {
       onClick={handleCopy}
       className="shrink-0 text-xs text-green-700 hover:text-green-900 font-medium"
     >
-      {copied ? "✓ Copiado" : "Copiar"}
+      {copied ? <><Check className="size-3 inline mr-0.5" /> Copiado</> : "Copiar"}
     </button>
   );
 }
@@ -132,7 +133,8 @@ export function InviteManager({ invites }: { invites: Invite[] }) {
               </div>
               <div className="text-gray-400 mt-1 space-y-0.5">
                 <p>
-                  {isFull ? "✅" : "⏳"} {usedSlots}/{totalSlots} utilizado(s) —{" "}
+                  {isFull ? <CheckCircle className="size-3.5 inline text-green-500" /> : <Clock className="size-3.5 inline text-gray-400" />}{" "}
+                  {usedSlots}/{totalSlots} utilizado(s) —{" "}
                   {new Date(invite.created_at).toLocaleDateString("es")}
                 </p>
                 {isRestricted && (

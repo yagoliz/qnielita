@@ -3,6 +3,7 @@
 import { register } from "@/actions/auth";
 import { useSearchParams } from "next/navigation";
 import { useActionState, Suspense } from "react";
+import { Trophy } from "lucide-react";
 
 function RegisterForm() {
   const searchParams = useSearchParams();
@@ -18,7 +19,7 @@ function RegisterForm() {
   if (!token) {
     return (
       <div className="text-center">
-        <h1 className="text-2xl font-bold mb-2">Qnielita ⚽</h1>
+        <h1 className="text-2xl font-bold mb-2">Qnielita <Trophy className="size-6 text-green-600 inline" /></h1>
         <p className="text-gray-500">
           Necesitas un enlace de invitación para registrarte.
         </p>
@@ -28,7 +29,7 @@ function RegisterForm() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-center mb-2">Qnielita ⚽</h1>
+      <h1 className="text-2xl font-bold text-center mb-2">Qnielita <Trophy className="size-6 text-green-600 inline" /></h1>
       <p className="text-gray-500 text-center mb-6">Crea tu cuenta</p>
 
       <form action={formAction} className="space-y-4">

@@ -2,6 +2,7 @@
 
 import { login } from "@/actions/auth";
 import { useActionState } from "react";
+import { Trophy } from "lucide-react";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(
@@ -13,7 +14,7 @@ export default function LoginPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-center mb-2">Qnielita ⚽</h1>
+      <h1 className="text-2xl font-bold text-center mb-2 flex items-center justify-center gap-2">Qnielita <Trophy className="size-6 text-green-600" /></h1>
       <p className="text-gray-500 text-center mb-6">Porra Mundial 2026</p>
 
       <form action={formAction} className="space-y-4">

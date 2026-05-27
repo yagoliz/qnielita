@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { Trophy, Dices } from "lucide-react";
 
 export function ApuestasTabs({
   torneoContent,
@@ -22,7 +23,7 @@ export function ApuestasTabs({
               : "text-gray-500"
           }`}
         >
-          🏆 Torneo
+          <Trophy className="size-4 inline mr-1" /> Torneo
         </button>
         <button
           onClick={() => setTab("locas")}
@@ -32,7 +33,7 @@ export function ApuestasTabs({
               : "text-gray-500"
           }`}
         >
-          🎲 Locas
+          <Dices className="size-4 inline mr-1" /> Locas
         </button>
       </div>
 

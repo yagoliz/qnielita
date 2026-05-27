@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { logout } from "@/actions/auth";
+import { Check } from "lucide-react";
 
 const emojiOptions = ["⚽", "🏆", "🥇", "🇪🇸", "🇦🇷", "🇧🇷", "🇫🇷", "🇩🇪", "🦁", "🐐", "🔥", "⭐"];
 
@@ -85,7 +86,7 @@ export default function PerfilPage() {
         disabled={saving}
         className="w-full bg-green-600 text-white rounded-lg py-2 font-medium disabled:opacity-50"
       >
-        {saving ? "Guardando..." : saved ? "✓ Guardado" : "Guardar cambios"}
+        {saving ? "Guardando..." : saved ? <><Check className="size-4 inline mr-0.5" /> Guardado</> : "Guardar cambios"}
       </button>
 
       <form action={logout}>

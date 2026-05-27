@@ -1,3 +1,4 @@
+import { CircleDot, Trophy, Dices } from "lucide-react";
 import Link from "next/link";
 
 type LeaderboardEntry = {
@@ -28,9 +29,9 @@ export function LeaderboardTable({
             <th className="py-2 px-3 text-left">Nombre</th>
             {!compact && (
               <>
-                <th className="py-2 px-2 text-center">⚽</th>
-                <th className="py-2 px-2 text-center">🏆</th>
-                <th className="py-2 px-2 text-center">🎲</th>
+                <th className="py-2 px-2 text-center"><CircleDot className="size-3.5 inline" /></th>
+                <th className="py-2 px-2 text-center"><Trophy className="size-3.5 inline" /></th>
+                <th className="py-2 px-2 text-center"><Dices className="size-3.5 inline" /></th>
               </>
             )}
             <th className="py-2 px-3 text-right">Pts</th>
