@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { ResultEntryForm } from "@/components/admin/result-entry-form";
 import { CustomBetForm } from "@/components/admin/custom-bet-form";
+import { CustomBetResolution } from "@/components/admin/custom-bet-resolution";
 import { TournamentResolution } from "@/components/admin/tournament-resolution";
 import { InviteManager } from "@/components/admin/invite-manager";
 import { UserOverview } from "@/components/admin/user-overview";
@@ -39,6 +40,11 @@ export default async function AdminPage() {
     .from("tournament_bet_config")
     .select("category, label, points_value, correct_answer")
     .order("points_value", { ascending: false });
+
+  const { data: customBets } = await supabase
+    .from("custom_bets")
+    .select("id, question, bet_type, options, points_value, lock_at, correct_answer")
+    .order("lock_at", { ascending: false });
 
   const { data: invites } = await supabase
     .from("invites")
@@ -113,7 +119,12 @@ export default async function AdminPage() {
       <h1 className="text-xl font-bold mb-4">Admin</h1>
       <AdminTabs
         resultadosContent={<ResultEntryForm matches={formattedMatches} />}
-        apuestasContent={<CustomBetForm />}
+        apuestasContent={
+          <div className="space-y-4">
+            <CustomBetForm />
+            <CustomBetResolution bets={(customBets ?? []) as any} />
+          </div>
+        }
         torneoContent={
           <TournamentResolution configs={tournamentConfigs ?? []} />
         }

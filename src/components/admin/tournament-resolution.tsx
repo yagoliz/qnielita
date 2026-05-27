@@ -21,33 +21,31 @@ function SingleResolutionForm({ config }: { config: Config }) {
   return (
     <form
       action={formAction}
-      className="bg-white rounded-lg p-3 shadow-sm border border-gray-100"
+      className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-3"
     >
       <input type="hidden" name="category" value={config.category} />
-      <div className="flex items-center justify-between gap-2 text-sm">
-        <div>
-          <span className="font-medium">{config.label}</span>
-          <span className="text-xs text-gray-400 ml-1">({config.points_value} pts)</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <input
-            name="correct_answer"
-            type="text"
-            defaultValue={config.correct_answer ?? ""}
-            placeholder="Respuesta..."
-            className="w-36 h-8 border rounded px-2 text-sm"
-          />
-          <button
-            type="submit"
-            disabled={pending}
-            className="px-3 py-1 bg-green-600 text-white text-xs rounded font-medium disabled:opacity-50"
-          >
-            {config.correct_answer ? "Actualizar" : "Resolver"}
-          </button>
-        </div>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-semibold text-sm">{config.label}</span>
+        <span className="text-xs text-gray-400 shrink-0">{config.points_value} pts</span>
       </div>
-      {state?.error && <p className="text-red-600 text-xs mt-1">{state.error}</p>}
-      {state?.success && <p className="text-green-600 text-xs mt-1">Apuesta resuelta.</p>}
+      <div className="flex gap-2">
+        <input
+          name="correct_answer"
+          type="text"
+          defaultValue={config.correct_answer ?? ""}
+          placeholder="Respuesta..."
+          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        />
+        <button
+          type="submit"
+          disabled={pending}
+          className="bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+        >
+          {config.correct_answer ? "Actualizar" : "Resolver"}
+        </button>
+      </div>
+      {state?.error && <p className="text-red-600 text-xs">{state.error}</p>}
+      {state?.success && <p className="text-green-600 text-xs">Apuesta resuelta.</p>}
     </form>
   );
 }
