@@ -1,15 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PartidosTree } from "@/components/partidos-tree";
+import { PartidosTabs } from "@/components/partidos-tabs";
 import {
   buildMatchTree,
   computeDefaultOpen,
+  resolveActiveTab,
+  sliceTree,
   type MatchInput,
   type PredictionInput,
   type ResultInput,
 } from "@/lib/match-tree";
 
-export default async function PartidosPage() {
+type PageProps = {
+  searchParams: Promise<{ tab?: string }>;
+};
+
+export default async function PartidosPage({ searchParams }: PageProps) {
+  const { tab } = await searchParams;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -47,25 +56,34 @@ export default async function PartidosPage() {
     away_team: m.away_team,
   }));
 
-  const tree = buildMatchTree(
+  const fullTree = buildMatchTree(
     matches,
     (predictions ?? []) as PredictionInput[],
     (results ?? []) as ResultInput[]
   );
-  const defaultOpen = computeDefaultOpen(tree, new Date());
+  const now = new Date();
+  const activeTab = resolveActiveTab(tab, fullTree, now);
+  const knockoutAvailable = fullTree.knockout.length > 0;
 
-  const empty = !matches.length;
+  const tabTree = sliceTree(fullTree, activeTab);
+  const defaultOpen = computeDefaultOpen(tabTree, now);
+
+  const tabIsEmpty =
+    (activeTab === "grupos" && tabTree.groupStage.groups.length === 0) ||
+    (activeTab === "eliminatorias" && tabTree.knockout.length === 0);
 
   return (
     <div>
       <h1 className="text-xl font-bold mb-4">Partidos</h1>
 
-      {empty ? (
+      <PartidosTabs activeTab={activeTab} knockoutAvailable={knockoutAvailable} />
+
+      {tabIsEmpty ? (
         <p className="text-gray-400 text-center mt-8">
           No hay partidos disponibles todavía.
         </p>
       ) : (
-        <PartidosTree tree={tree} defaultOpen={defaultOpen} />
+        <PartidosTree tree={tabTree} defaultOpen={defaultOpen} />
       )}
     </div>
   );
