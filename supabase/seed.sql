@@ -1,9 +1,9 @@
--- Groups (A through L)
+-- Groups (A through L, plus KO for knockout placeholder teams)
 INSERT INTO groups (name) VALUES
   ('A'), ('B'), ('C'), ('D'), ('E'), ('F'),
-  ('G'), ('H'), ('I'), ('J'), ('K'), ('L');
+  ('G'), ('H'), ('I'), ('J'), ('K'), ('L'), ('KO');
 
--- Teams (48 teams — official FIFA World Cup 2026 groups)
+-- Teams (48 teams - official FIFA World Cup 2026 groups)
 INSERT INTO teams (name, code, group_id) VALUES
   -- Group A
   ('México', 'MEX', 1), ('Corea del Sur', 'KOR', 1), ('Chequia', 'CZE', 1), ('Sudáfrica', 'RSA', 1),
@@ -30,111 +30,195 @@ INSERT INTO teams (name, code, group_id) VALUES
   -- Group L
   ('Inglaterra', 'ENG', 12), ('Croacia', 'CRO', 12), ('Ghana', 'GHA', 12), ('Panamá', 'PAN', 12);
 
--- Tournament bet config
--- Lock date = tournament start (June 11, 2026)
-INSERT INTO tournament_bet_config (category, label, points_value, lock_at) VALUES
-  ('champion', 'Campeón', 10, '2026-06-11T00:00:00Z'),
-  ('top_scorer', 'Máximo Goleador', 7, '2026-06-11T00:00:00Z'),
-  ('golden_ball', 'Balón de Oro', 7, '2026-06-11T00:00:00Z'),
-  ('surprise_team', 'Selección Revelación', 5, '2026-06-11T00:00:00Z'),
-  ('most_goals_group_stage', 'Más Goles en Fase de Grupos', 5, '2026-06-11T00:00:00Z');
+-- Knockout placeholder teams
+INSERT INTO teams (name, code, group_id) VALUES
+  ('Subcampeón Grupo A', '2A', 13),
+  ('Subcampeón Grupo B', '2B', 13),
+  ('Ganador Grupo E', '1E', 13),
+  ('Tercero Grupo A/B/C/D/F', '3ABCDF', 13),
+  ('Ganador Grupo F', '1F', 13),
+  ('Subcampeón Grupo C', '2C', 13),
+  ('Ganador Grupo C', '1C', 13),
+  ('Subcampeón Grupo F', '2F', 13),
+  ('Ganador Grupo I', '1I', 13),
+  ('Tercero Grupo C/D/F/G/H', '3CDFGH', 13),
+  ('Subcampeón Grupo E', '2E', 13),
+  ('Subcampeón Grupo I', '2I', 13),
+  ('Ganador Grupo A', '1A', 13),
+  ('Tercero Grupo C/E/F/H/I', '3CEFHI', 13),
+  ('Ganador Grupo L', '1L', 13),
+  ('Tercero Grupo E/H/I/J/K', '3EHIJK', 13),
+  ('Ganador Grupo D', '1D', 13),
+  ('Tercero Grupo B/E/F/I/J', '3BEFIJ', 13),
+  ('Ganador Grupo G', '1G', 13),
+  ('Tercero Grupo A/E/H/I/J', '3AEHIJ', 13),
+  ('Subcampeón Grupo K', '2K', 13),
+  ('Subcampeón Grupo L', '2L', 13),
+  ('Ganador Grupo H', '1H', 13),
+  ('Subcampeón Grupo J', '2J', 13),
+  ('Ganador Grupo B', '1B', 13),
+  ('Tercero Grupo E/F/G/I/J', '3EFGIJ', 13),
+  ('Ganador Grupo J', '1J', 13),
+  ('Subcampeón Grupo H', '2H', 13),
+  ('Ganador Grupo K', '1K', 13),
+  ('Tercero Grupo D/E/I/J/L', '3DEIJL', 13),
+  ('Subcampeón Grupo D', '2D', 13),
+  ('Subcampeón Grupo G', '2G', 13),
+  ('Ganador Partido 74', 'W74', 13),
+  ('Ganador Partido 77', 'W77', 13),
+  ('Ganador Partido 73', 'W73', 13),
+  ('Ganador Partido 75', 'W75', 13),
+  ('Ganador Partido 76', 'W76', 13),
+  ('Ganador Partido 78', 'W78', 13),
+  ('Ganador Partido 79', 'W79', 13),
+  ('Ganador Partido 80', 'W80', 13),
+  ('Ganador Partido 83', 'W83', 13),
+  ('Ganador Partido 84', 'W84', 13),
+  ('Ganador Partido 81', 'W81', 13),
+  ('Ganador Partido 82', 'W82', 13),
+  ('Ganador Partido 86', 'W86', 13),
+  ('Ganador Partido 88', 'W88', 13),
+  ('Ganador Partido 85', 'W85', 13),
+  ('Ganador Partido 87', 'W87', 13),
+  ('Ganador Partido 89', 'W89', 13),
+  ('Ganador Partido 90', 'W90', 13),
+  ('Ganador Partido 93', 'W93', 13),
+  ('Ganador Partido 94', 'W94', 13),
+  ('Ganador Partido 91', 'W91', 13),
+  ('Ganador Partido 92', 'W92', 13),
+  ('Ganador Partido 95', 'W95', 13),
+  ('Ganador Partido 96', 'W96', 13),
+  ('Ganador Partido 97', 'W97', 13),
+  ('Ganador Partido 98', 'W98', 13),
+  ('Ganador Partido 99', 'W99', 13),
+  ('Ganador Partido 100', 'W100', 13),
+  ('Perdedor Partido 101', 'L101', 13),
+  ('Perdedor Partido 102', 'L102', 13),
+  ('Ganador Partido 101', 'W101', 13),
+  ('Ganador Partido 102', 'W102', 13);
 
--- Group stage matches (72 matches)
--- Official FIFA World Cup 2026 schedule. All times UTC.
--- Per group: MD1 (1v4, 2v3), MD2 (3v4, 1v2), MD3 (3v1, 4v2)
+-- Tournament bet config
+-- Lock date = opening kickoff (June 11, 2026 19:00 UTC)
+INSERT INTO tournament_bet_config (category, label, points_value, lock_at) VALUES
+  ('champion', 'Campeón', 10, '2026-06-11T19:00:00Z'),
+  ('top_scorer', 'Máximo Goleador', 7, '2026-06-11T19:00:00Z'),
+  ('golden_ball', 'Balón de Oro', 7, '2026-06-11T19:00:00Z'),
+  ('surprise_team', 'Selección Revelación', 5, '2026-06-11T19:00:00Z'),
+  ('most_goals_group_stage', 'Más Goles en Fase de Grupos', 5, '2026-06-11T19:00:00Z');
+
+-- Matches (104 matches)
+-- Official FIFA World Cup 2026 schedule. All kickoff_at values are UTC.
 INSERT INTO matches (home_team_id, away_team_id, group_id, stage, kickoff_at, venue) VALUES
-  -- Group A: MEX(1), KOR(2), CZE(3), RSA(4)
+  -- Group stage
   (1, 4, 1, 'group', '2026-06-11T19:00:00Z', 'Estadio Azteca, Ciudad de México'),
   (2, 3, 1, 'group', '2026-06-12T02:00:00Z', 'Estadio Akron, Guadalajara'),
-  (3, 4, 1, 'group', '2026-06-18T16:00:00Z', 'Mercedes-Benz Stadium, Atlanta'),
-  (1, 2, 1, 'group', '2026-06-19T01:00:00Z', 'Estadio Akron, Guadalajara'),
-  (3, 1, 1, 'group', '2026-06-25T01:00:00Z', 'Estadio Azteca, Ciudad de México'),
-  (4, 2, 1, 'group', '2026-06-25T01:00:00Z', 'Estadio BBVA, Monterrey'),
-
-  -- Group B: CAN(5), QAT(6), SUI(7), BIH(8)
   (5, 8, 2, 'group', '2026-06-12T19:00:00Z', 'BMO Field, Toronto'),
-  (6, 7, 2, 'group', '2026-06-13T19:00:00Z', 'Levi''s Stadium, Santa Clara'),
-  (7, 8, 2, 'group', '2026-06-18T19:00:00Z', 'SoFi Stadium, Los Ángeles'),
-  (5, 6, 2, 'group', '2026-06-18T22:00:00Z', 'BC Place, Vancouver'),
-  (7, 5, 2, 'group', '2026-06-24T19:00:00Z', 'BC Place, Vancouver'),
-  (8, 6, 2, 'group', '2026-06-24T19:00:00Z', 'Lumen Field, Seattle'),
-
-  -- Group C: BRA(9), MAR(10), HAI(11), SCO(12)
-  (9, 12, 3, 'group', '2026-06-13T22:00:00Z', 'MetLife Stadium, Nueva Jersey'),
-  (10, 11, 3, 'group', '2026-06-14T01:00:00Z', 'Gillette Stadium, Foxborough'),
-  (11, 12, 3, 'group', '2026-06-19T22:00:00Z', 'Gillette Stadium, Foxborough'),
-  (9, 10, 3, 'group', '2026-06-20T00:30:00Z', 'Lincoln Financial Field, Filadelfia'),
-  (11, 9, 3, 'group', '2026-06-24T22:00:00Z', 'Hard Rock Stadium, Miami'),
-  (12, 10, 3, 'group', '2026-06-24T22:00:00Z', 'Mercedes-Benz Stadium, Atlanta'),
-
-  -- Group D: USA(13), AUS(14), TUR(15), PAR(16)
   (13, 16, 4, 'group', '2026-06-13T01:00:00Z', 'SoFi Stadium, Los Ángeles'),
+  (11, 12, 3, 'group', '2026-06-14T01:00:00Z', 'Gillette Stadium, Boston'),
   (14, 15, 4, 'group', '2026-06-14T04:00:00Z', 'BC Place, Vancouver'),
-  (15, 16, 4, 'group', '2026-06-19T19:00:00Z', 'Lumen Field, Seattle'),
-  (13, 14, 4, 'group', '2026-06-20T04:00:00Z', 'Levi''s Stadium, Santa Clara'),
-  (15, 13, 4, 'group', '2026-06-26T02:00:00Z', 'SoFi Stadium, Los Ángeles'),
-  (16, 14, 4, 'group', '2026-06-26T02:00:00Z', 'Levi''s Stadium, Santa Clara'),
-
-  -- Group E: GER(17), CIV(18), ECU(19), CUW(20)
-  (17, 20, 5, 'group', '2026-06-14T17:00:00Z', 'NRG Stadium, Houston'),
+  (9, 10, 3, 'group', '2026-06-13T22:00:00Z', 'MetLife Stadium, Nueva York/Nueva Jersey'),
+  (6, 7, 2, 'group', '2026-06-13T19:00:00Z', 'Levi''s Stadium, Área de la Bahía de San Francisco'),
   (18, 19, 5, 'group', '2026-06-14T23:00:00Z', 'Lincoln Financial Field, Filadelfia'),
-  (19, 20, 5, 'group', '2026-06-20T20:00:00Z', 'BMO Field, Toronto'),
-  (17, 18, 5, 'group', '2026-06-21T00:00:00Z', 'Arrowhead Stadium, Kansas City'),
-  (19, 17, 5, 'group', '2026-06-25T20:00:00Z', 'MetLife Stadium, Nueva Jersey'),
-  (20, 18, 5, 'group', '2026-06-25T20:00:00Z', 'Lincoln Financial Field, Filadelfia'),
-
-  -- Group F: NED(21), JPN(22), SWE(23), TUN(24)
-  (21, 24, 6, 'group', '2026-06-14T20:00:00Z', 'AT&T Stadium, Dallas'),
-  (22, 23, 6, 'group', '2026-06-15T02:00:00Z', 'Estadio BBVA, Monterrey'),
-  (23, 24, 6, 'group', '2026-06-20T17:00:00Z', 'NRG Stadium, Houston'),
-  (21, 22, 6, 'group', '2026-06-21T04:00:00Z', 'Estadio BBVA, Monterrey'),
-  (23, 21, 6, 'group', '2026-06-25T23:00:00Z', 'AT&T Stadium, Dallas'),
-  (24, 22, 6, 'group', '2026-06-25T23:00:00Z', 'Arrowhead Stadium, Kansas City'),
-
-  -- Group G: BEL(25), EGY(26), IRN(27), NZL(28)
-  (25, 28, 7, 'group', '2026-06-15T19:00:00Z', 'Lumen Field, Seattle'),
-  (26, 27, 7, 'group', '2026-06-16T01:00:00Z', 'SoFi Stadium, Los Ángeles'),
-  (27, 28, 7, 'group', '2026-06-21T19:00:00Z', 'SoFi Stadium, Los Ángeles'),
-  (25, 26, 7, 'group', '2026-06-22T01:00:00Z', 'BC Place, Vancouver'),
-  (27, 25, 7, 'group', '2026-06-27T03:00:00Z', 'Lumen Field, Seattle'),
-  (28, 26, 7, 'group', '2026-06-27T03:00:00Z', 'BC Place, Vancouver'),
-
-  -- Group H: ESP(29), KSA(30), URU(31), CPV(32)
-  (29, 32, 8, 'group', '2026-06-15T16:00:00Z', 'Mercedes-Benz Stadium, Atlanta'),
+  (17, 20, 5, 'group', '2026-06-14T17:00:00Z', 'NRG Stadium, Houston'),
+  (21, 22, 6, 'group', '2026-06-14T20:00:00Z', 'AT&T Stadium, Dallas'),
+  (23, 24, 6, 'group', '2026-06-15T02:00:00Z', 'Estadio BBVA, Monterrey'),
   (30, 31, 8, 'group', '2026-06-15T22:00:00Z', 'Hard Rock Stadium, Miami'),
-  (31, 32, 8, 'group', '2026-06-21T16:00:00Z', 'Mercedes-Benz Stadium, Atlanta'),
-  (29, 30, 8, 'group', '2026-06-21T22:00:00Z', 'Hard Rock Stadium, Miami'),
-  (31, 29, 8, 'group', '2026-06-27T00:00:00Z', 'NRG Stadium, Houston'),
-  (32, 30, 8, 'group', '2026-06-27T00:00:00Z', 'Estadio Akron, Guadalajara'),
-
-  -- Group I: FRA(33), SEN(34), IRQ(35), NOR(36)
-  (33, 36, 9, 'group', '2026-06-16T19:00:00Z', 'MetLife Stadium, Nueva Jersey'),
-  (34, 35, 9, 'group', '2026-06-16T22:00:00Z', 'Gillette Stadium, Foxborough'),
-  (35, 36, 9, 'group', '2026-06-22T21:00:00Z', 'Lincoln Financial Field, Filadelfia'),
-  (33, 34, 9, 'group', '2026-06-23T00:00:00Z', 'MetLife Stadium, Nueva Jersey'),
-  (35, 33, 9, 'group', '2026-06-26T19:00:00Z', 'Gillette Stadium, Foxborough'),
-  (36, 34, 9, 'group', '2026-06-26T19:00:00Z', 'BMO Field, Toronto'),
-
-  -- Group J: ARG(37), ALG(38), AUT(39), JOR(40)
-  (37, 40, 10, 'group', '2026-06-17T01:00:00Z', 'Arrowhead Stadium, Kansas City'),
-  (38, 39, 10, 'group', '2026-06-17T04:00:00Z', 'Levi''s Stadium, Santa Clara'),
-  (39, 40, 10, 'group', '2026-06-22T17:00:00Z', 'AT&T Stadium, Dallas'),
-  (37, 38, 10, 'group', '2026-06-23T03:00:00Z', 'Levi''s Stadium, Santa Clara'),
-  (39, 37, 10, 'group', '2026-06-28T02:00:00Z', 'Arrowhead Stadium, Kansas City'),
-  (40, 38, 10, 'group', '2026-06-28T02:00:00Z', 'AT&T Stadium, Dallas'),
-
-  -- Group K: POR(41), UZB(42), COL(43), COD(44)
+  (29, 32, 8, 'group', '2026-06-15T16:00:00Z', 'Mercedes-Benz Stadium, Atlanta'),
+  (27, 28, 7, 'group', '2026-06-16T01:00:00Z', 'SoFi Stadium, Los Ángeles'),
+  (25, 26, 7, 'group', '2026-06-15T19:00:00Z', 'Lumen Field, Seattle'),
+  (33, 34, 9, 'group', '2026-06-16T19:00:00Z', 'MetLife Stadium, Nueva York/Nueva Jersey'),
+  (35, 36, 9, 'group', '2026-06-16T22:00:00Z', 'Gillette Stadium, Boston'),
+  (37, 38, 10, 'group', '2026-06-17T01:00:00Z', 'Arrowhead Stadium, Kansas City'),
+  (39, 40, 10, 'group', '2026-06-17T04:00:00Z', 'Levi''s Stadium, Área de la Bahía de San Francisco'),
+  (47, 48, 12, 'group', '2026-06-17T23:00:00Z', 'BMO Field, Toronto'),
+  (45, 46, 12, 'group', '2026-06-17T20:00:00Z', 'AT&T Stadium, Dallas'),
   (41, 44, 11, 'group', '2026-06-17T17:00:00Z', 'NRG Stadium, Houston'),
   (42, 43, 11, 'group', '2026-06-18T02:00:00Z', 'Estadio Azteca, Ciudad de México'),
-  (43, 44, 11, 'group', '2026-06-23T17:00:00Z', 'NRG Stadium, Houston'),
-  (41, 42, 11, 'group', '2026-06-24T02:00:00Z', 'Estadio Akron, Guadalajara'),
+  (3, 4, 1, 'group', '2026-06-18T16:00:00Z', 'Mercedes-Benz Stadium, Atlanta'),
+  (7, 8, 2, 'group', '2026-06-18T19:00:00Z', 'SoFi Stadium, Los Ángeles'),
+  (5, 6, 2, 'group', '2026-06-18T22:00:00Z', 'BC Place, Vancouver'),
+  (1, 2, 1, 'group', '2026-06-19T01:00:00Z', 'Estadio Akron, Guadalajara'),
+  (9, 11, 3, 'group', '2026-06-20T00:30:00Z', 'Lincoln Financial Field, Filadelfia'),
+  (12, 10, 3, 'group', '2026-06-19T22:00:00Z', 'Gillette Stadium, Boston'),
+  (15, 16, 4, 'group', '2026-06-20T03:00:00Z', 'Levi''s Stadium, Área de la Bahía de San Francisco'),
+  (13, 14, 4, 'group', '2026-06-19T19:00:00Z', 'Lumen Field, Seattle'),
+  (17, 18, 5, 'group', '2026-06-20T20:00:00Z', 'BMO Field, Toronto'),
+  (19, 20, 5, 'group', '2026-06-21T00:00:00Z', 'Arrowhead Stadium, Kansas City'),
+  (21, 23, 6, 'group', '2026-06-20T17:00:00Z', 'NRG Stadium, Houston'),
+  (24, 22, 6, 'group', '2026-06-21T04:00:00Z', 'Estadio BBVA, Monterrey'),
+  (31, 32, 8, 'group', '2026-06-21T22:00:00Z', 'Hard Rock Stadium, Miami'),
+  (29, 30, 8, 'group', '2026-06-21T16:00:00Z', 'Mercedes-Benz Stadium, Atlanta'),
+  (25, 27, 7, 'group', '2026-06-21T19:00:00Z', 'SoFi Stadium, Los Ángeles'),
+  (28, 26, 7, 'group', '2026-06-22T01:00:00Z', 'BC Place, Vancouver'),
+  (36, 34, 9, 'group', '2026-06-23T00:00:00Z', 'MetLife Stadium, Nueva York/Nueva Jersey'),
+  (33, 35, 9, 'group', '2026-06-22T21:00:00Z', 'Lincoln Financial Field, Filadelfia'),
+  (37, 39, 10, 'group', '2026-06-22T17:00:00Z', 'AT&T Stadium, Dallas'),
+  (40, 38, 10, 'group', '2026-06-23T03:00:00Z', 'Levi''s Stadium, Área de la Bahía de San Francisco'),
+  (45, 47, 12, 'group', '2026-06-23T20:00:00Z', 'Gillette Stadium, Boston'),
+  (48, 46, 12, 'group', '2026-06-23T23:00:00Z', 'BMO Field, Toronto'),
+  (41, 42, 11, 'group', '2026-06-23T17:00:00Z', 'NRG Stadium, Houston'),
+  (43, 44, 11, 'group', '2026-06-24T02:00:00Z', 'Estadio Akron, Guadalajara'),
+  (12, 9, 3, 'group', '2026-06-24T22:00:00Z', 'Hard Rock Stadium, Miami'),
+  (10, 11, 3, 'group', '2026-06-24T22:00:00Z', 'Mercedes-Benz Stadium, Atlanta'),
+  (7, 5, 2, 'group', '2026-06-24T19:00:00Z', 'BC Place, Vancouver'),
+  (8, 6, 2, 'group', '2026-06-24T19:00:00Z', 'Lumen Field, Seattle'),
+  (3, 1, 1, 'group', '2026-06-25T01:00:00Z', 'Estadio Azteca, Ciudad de México'),
+  (4, 2, 1, 'group', '2026-06-25T01:00:00Z', 'Estadio BBVA, Monterrey'),
+  (20, 18, 5, 'group', '2026-06-25T20:00:00Z', 'Lincoln Financial Field, Filadelfia'),
+  (19, 17, 5, 'group', '2026-06-25T20:00:00Z', 'MetLife Stadium, Nueva York/Nueva Jersey'),
+  (22, 23, 6, 'group', '2026-06-25T23:00:00Z', 'AT&T Stadium, Dallas'),
+  (24, 21, 6, 'group', '2026-06-25T23:00:00Z', 'Arrowhead Stadium, Kansas City'),
+  (15, 13, 4, 'group', '2026-06-26T02:00:00Z', 'SoFi Stadium, Los Ángeles'),
+  (16, 14, 4, 'group', '2026-06-26T02:00:00Z', 'Levi''s Stadium, Área de la Bahía de San Francisco'),
+  (36, 33, 9, 'group', '2026-06-26T19:00:00Z', 'Gillette Stadium, Boston'),
+  (34, 35, 9, 'group', '2026-06-26T19:00:00Z', 'BMO Field, Toronto'),
+  (26, 27, 7, 'group', '2026-06-27T03:00:00Z', 'Lumen Field, Seattle'),
+  (28, 25, 7, 'group', '2026-06-27T03:00:00Z', 'BC Place, Vancouver'),
+  (32, 30, 8, 'group', '2026-06-27T00:00:00Z', 'NRG Stadium, Houston'),
+  (31, 29, 8, 'group', '2026-06-27T00:00:00Z', 'Estadio Akron, Guadalajara'),
+  (48, 45, 12, 'group', '2026-06-27T21:00:00Z', 'MetLife Stadium, Nueva York/Nueva Jersey'),
+  (46, 47, 12, 'group', '2026-06-27T21:00:00Z', 'Lincoln Financial Field, Filadelfia'),
+  (38, 39, 10, 'group', '2026-06-28T02:00:00Z', 'Arrowhead Stadium, Kansas City'),
+  (40, 37, 10, 'group', '2026-06-28T02:00:00Z', 'AT&T Stadium, Dallas'),
   (43, 41, 11, 'group', '2026-06-27T23:30:00Z', 'Hard Rock Stadium, Miami'),
   (44, 42, 11, 'group', '2026-06-27T23:30:00Z', 'Mercedes-Benz Stadium, Atlanta'),
 
-  -- Group L: ENG(45), CRO(46), GHA(47), PAN(48)
-  (45, 48, 12, 'group', '2026-06-17T20:00:00Z', 'AT&T Stadium, Dallas'),
-  (46, 47, 12, 'group', '2026-06-17T23:00:00Z', 'BMO Field, Toronto'),
-  (47, 48, 12, 'group', '2026-06-23T20:00:00Z', 'Gillette Stadium, Foxborough'),
-  (45, 46, 12, 'group', '2026-06-23T23:00:00Z', 'BMO Field, Toronto'),
-  (47, 45, 12, 'group', '2026-06-27T21:00:00Z', 'MetLife Stadium, Nueva Jersey'),
-  (48, 46, 12, 'group', '2026-06-27T21:00:00Z', 'Lincoln Financial Field, Filadelfia');
+  -- Round of 32
+  (49, 50, NULL, 'R32', '2026-06-28T19:00:00Z', 'SoFi Stadium, Los Ángeles'),
+  (51, 52, NULL, 'R32', '2026-06-29T20:30:00Z', 'Gillette Stadium, Boston'),
+  (53, 54, NULL, 'R32', '2026-06-30T01:00:00Z', 'Estadio BBVA, Monterrey'),
+  (55, 56, NULL, 'R32', '2026-06-29T17:00:00Z', 'NRG Stadium, Houston'),
+  (57, 58, NULL, 'R32', '2026-06-30T21:00:00Z', 'MetLife Stadium, Nueva York/Nueva Jersey'),
+  (59, 60, NULL, 'R32', '2026-06-30T17:00:00Z', 'AT&T Stadium, Dallas'),
+  (61, 62, NULL, 'R32', '2026-07-01T01:00:00Z', 'Estadio Azteca, Ciudad de México'),
+  (63, 64, NULL, 'R32', '2026-07-01T16:00:00Z', 'Mercedes-Benz Stadium, Atlanta'),
+  (65, 66, NULL, 'R32', '2026-07-02T00:00:00Z', 'Levi''s Stadium, Área de la Bahía de San Francisco'),
+  (67, 68, NULL, 'R32', '2026-07-01T20:00:00Z', 'Lumen Field, Seattle'),
+  (69, 70, NULL, 'R32', '2026-07-02T23:00:00Z', 'BMO Field, Toronto'),
+  (71, 72, NULL, 'R32', '2026-07-02T19:00:00Z', 'SoFi Stadium, Los Ángeles'),
+  (73, 74, NULL, 'R32', '2026-07-03T03:00:00Z', 'BC Place, Vancouver'),
+  (75, 76, NULL, 'R32', '2026-07-03T22:00:00Z', 'Hard Rock Stadium, Miami'),
+  (77, 78, NULL, 'R32', '2026-07-04T01:30:00Z', 'Arrowhead Stadium, Kansas City'),
+  (79, 80, NULL, 'R32', '2026-07-03T18:00:00Z', 'AT&T Stadium, Dallas'),
+
+  -- Round of 16
+  (81, 82, NULL, 'R16', '2026-07-04T21:00:00Z', 'Lincoln Financial Field, Filadelfia'),
+  (83, 84, NULL, 'R16', '2026-07-04T17:00:00Z', 'NRG Stadium, Houston'),
+  (85, 86, NULL, 'R16', '2026-07-05T20:00:00Z', 'MetLife Stadium, Nueva York/Nueva Jersey'),
+  (87, 88, NULL, 'R16', '2026-07-06T00:00:00Z', 'Estadio Azteca, Ciudad de México'),
+  (89, 90, NULL, 'R16', '2026-07-06T19:00:00Z', 'AT&T Stadium, Dallas'),
+  (91, 92, NULL, 'R16', '2026-07-07T00:00:00Z', 'Lumen Field, Seattle'),
+  (93, 94, NULL, 'R16', '2026-07-07T16:00:00Z', 'Mercedes-Benz Stadium, Atlanta'),
+  (95, 96, NULL, 'R16', '2026-07-07T20:00:00Z', 'BC Place, Vancouver'),
+
+  -- Quarter-finals
+  (97, 98, NULL, 'QF', '2026-07-09T20:00:00Z', 'Gillette Stadium, Boston'),
+  (99, 100, NULL, 'QF', '2026-07-10T19:00:00Z', 'SoFi Stadium, Los Ángeles'),
+  (101, 102, NULL, 'QF', '2026-07-11T21:00:00Z', 'Hard Rock Stadium, Miami'),
+  (103, 104, NULL, 'QF', '2026-07-12T01:00:00Z', 'Arrowhead Stadium, Kansas City'),
+
+  -- Semi-finals, third place, and final
+  (105, 106, NULL, 'SF', '2026-07-14T19:00:00Z', 'AT&T Stadium, Dallas'),
+  (107, 108, NULL, 'SF', '2026-07-15T19:00:00Z', 'Mercedes-Benz Stadium, Atlanta'),
+  (109, 110, NULL, 'third_place', '2026-07-18T21:00:00Z', 'Hard Rock Stadium, Miami'),
+  (111, 112, NULL, 'final', '2026-07-19T19:00:00Z', 'MetLife Stadium, Nueva York/Nueva Jersey');
