@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { buildMatchTree, computeDefaultOpen, type MatchInput } from "./match-tree";
+import {
+  buildMatchTree,
+  computeDefaultOpen,
+  resolveActiveTab,
+  sliceTree,
+  type MatchInput,
+} from "./match-tree";
 
 describe("buildMatchTree", () => {
   it("returns empty tree for empty input", () => {
@@ -174,5 +180,95 @@ describe("computeDefaultOpen", () => {
     const tree = buildMatchTree([...groupMatches, knockoutMatch], [], []);
     const open = computeDefaultOpen(tree, new Date("2026-08-01T00:00:00Z"));
     expect(open).toEqual({});
+  });
+});
+
+describe("sliceTree", () => {
+  const groupMatch: MatchInput = {
+    id: 1,
+    kickoff_at: "2026-06-11T18:00:00Z",
+    venue: null,
+    stage: "group",
+    group_id: 1,
+    group_name: "A",
+    home_team: { name: "H", code: "H" },
+    away_team: { name: "A", code: "A" },
+  };
+  const knockoutMatch: MatchInput = {
+    id: 100,
+    kickoff_at: "2026-07-15T18:00:00Z",
+    venue: null,
+    stage: "R16",
+    group_id: null,
+    group_name: null,
+    home_team: { name: "W1A", code: "W1A" },
+    away_team: { name: "R2C", code: "R2C" },
+  };
+
+  it("keeps only group stage when view is grupos", () => {
+    const full = buildMatchTree([groupMatch, knockoutMatch], [], []);
+    const sliced = sliceTree(full, "grupos");
+    expect(sliced.groupStage.groups).toHaveLength(1);
+    expect(sliced.knockout).toEqual([]);
+  });
+
+  it("keeps only knockout when view is eliminatorias", () => {
+    const full = buildMatchTree([groupMatch, knockoutMatch], [], []);
+    const sliced = sliceTree(full, "eliminatorias");
+    expect(sliced.groupStage.groups).toEqual([]);
+    expect(sliced.knockout).toHaveLength(1);
+  });
+});
+
+describe("resolveActiveTab", () => {
+  const groupMatch: MatchInput = {
+    id: 1,
+    kickoff_at: "2026-06-11T18:00:00Z",
+    venue: null,
+    stage: "group",
+    group_id: 1,
+    group_name: "A",
+    home_team: { name: "H", code: "H" },
+    away_team: { name: "A", code: "A" },
+  };
+  const knockoutMatch: MatchInput = {
+    id: 100,
+    kickoff_at: "2026-07-15T18:00:00Z",
+    venue: null,
+    stage: "R16",
+    group_id: null,
+    group_name: null,
+    home_team: { name: "W1A", code: "W1A" },
+    away_team: { name: "R2C", code: "R2C" },
+  };
+
+  it("honors explicit ?tab=grupos", () => {
+    const tree = buildMatchTree([groupMatch, knockoutMatch], [], []);
+    expect(resolveActiveTab("grupos", tree, new Date("2026-08-01"))).toBe("grupos");
+  });
+
+  it("honors explicit ?tab=eliminatorias even when knockout is empty", () => {
+    const tree = buildMatchTree([groupMatch], [], []);
+    expect(resolveActiveTab("eliminatorias", tree, new Date())).toBe("eliminatorias");
+  });
+
+  it("defaults to grupos when no param and next match is group stage", () => {
+    const tree = buildMatchTree([groupMatch, knockoutMatch], [], []);
+    expect(resolveActiveTab(undefined, tree, new Date("2026-06-01"))).toBe("grupos");
+  });
+
+  it("defaults to eliminatorias when next upcoming match is knockout", () => {
+    const tree = buildMatchTree([groupMatch, knockoutMatch], [], []);
+    expect(resolveActiveTab(undefined, tree, new Date("2026-06-20"))).toBe("eliminatorias");
+  });
+
+  it("defaults to grupos when knockout tree is empty", () => {
+    const tree = buildMatchTree([groupMatch], [], []);
+    expect(resolveActiveTab(undefined, tree, new Date("2026-08-01"))).toBe("grupos");
+  });
+
+  it("falls back to default selection for unrecognized values", () => {
+    const tree = buildMatchTree([groupMatch, knockoutMatch], [], []);
+    expect(resolveActiveTab("bogus", tree, new Date("2026-06-20"))).toBe("eliminatorias");
   });
 });

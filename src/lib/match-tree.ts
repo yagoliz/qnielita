@@ -256,3 +256,26 @@ export function computeDefaultOpen(tree: MatchTree, now: Date): DefaultOpen {
   if (next.knockoutStage != null) open.knockoutStage = next.knockoutStage;
   return open;
 }
+
+export type TabView = "grupos" | "eliminatorias";
+
+export function sliceTree(tree: MatchTree, view: TabView): MatchTree {
+  if (view === "grupos") {
+    return { groupStage: tree.groupStage, knockout: [] };
+  }
+  return { groupStage: { groups: [] }, knockout: tree.knockout };
+}
+
+export function resolveActiveTab(
+  paramValue: string | undefined,
+  tree: MatchTree,
+  now: Date
+): TabView {
+  if (paramValue === "grupos") return "grupos";
+  if (paramValue === "eliminatorias") return "eliminatorias";
+
+  if (tree.knockout.length === 0) return "grupos";
+
+  const open = computeDefaultOpen(tree, now);
+  return open.knockoutStage ? "eliminatorias" : "grupos";
+}
