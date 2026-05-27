@@ -2,7 +2,7 @@
 
 import { Countdown } from "./countdown";
 import { submitCustomBetAnswer } from "@/actions/bets";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 type CustomBetCardProps = {
   bet: {
@@ -22,6 +22,7 @@ type CustomBetCardProps = {
 
 export function CustomBetCard({ bet, existingAnswer }: CustomBetCardProps) {
   const isLocked = new Date(bet.lock_at) <= new Date();
+  const [selected, setSelected] = useState<string>(existingAnswer?.answer ?? "");
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
@@ -51,7 +52,7 @@ export function CustomBetCard({ bet, existingAnswer }: CustomBetCardProps) {
               <label
                 key={option}
                 className={`flex-1 text-center py-2 rounded-lg border cursor-pointer text-sm ${
-                  existingAnswer?.answer === option
+                  selected === option
                     ? "border-green-600 bg-green-50"
                     : "border-gray-300"
                 } ${isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -60,7 +61,8 @@ export function CustomBetCard({ bet, existingAnswer }: CustomBetCardProps) {
                   type="radio"
                   name="answer"
                   value={option}
-                  defaultChecked={existingAnswer?.answer === option}
+                  checked={selected === option}
+                  onChange={() => setSelected(option)}
                   disabled={isLocked}
                   className="sr-only"
                 />
@@ -76,7 +78,7 @@ export function CustomBetCard({ bet, existingAnswer }: CustomBetCardProps) {
               <label
                 key={option}
                 className={`block px-3 py-2 rounded-lg border cursor-pointer text-sm ${
-                  existingAnswer?.answer === option
+                  selected === option
                     ? "border-green-600 bg-green-50"
                     : "border-gray-300"
                 } ${isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -85,7 +87,8 @@ export function CustomBetCard({ bet, existingAnswer }: CustomBetCardProps) {
                   type="radio"
                   name="answer"
                   value={option}
-                  defaultChecked={existingAnswer?.answer === option}
+                  checked={selected === option}
+                  onChange={() => setSelected(option)}
                   disabled={isLocked}
                   className="sr-only"
                 />
