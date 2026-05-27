@@ -1,18 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { MatchCard } from "@/components/match-card";
-
-const stageLabels: Record<string, string> = {
-  group: "Fase de Grupos",
-  R32: "Dieciseisavos",
-  R16: "Octavos de Final",
-  QF: "Cuartos de Final",
-  SF: "Semifinales",
-  third_place: "Tercer Puesto",
-  final: "Final",
-};
-
-const stageOrder = ["group", "R32", "R16", "QF", "SF", "third_place", "final"];
+import { PartidosTree } from "@/components/partidos-tree";
+import {
+  buildMatchTree,
+  computeDefaultOpen,
+  type MatchInput,
+  type PredictionInput,
+  type ResultInput,
+} from "@/lib/match-tree";
 
 export default async function PartidosPage() {
   const supabase = await createClient();
@@ -22,73 +17,55 @@ export default async function PartidosPage() {
 
   if (!user) redirect("/login");
 
-  const { data: matches } = await supabase
+  const { data: matchesRaw } = await supabase
     .from("matches")
     .select(`
       id, kickoff_at, venue, stage, group_id,
       home_team:teams!matches_home_team_id_fkey(name, code),
-      away_team:teams!matches_away_team_id_fkey(name, code)
+      away_team:teams!matches_away_team_id_fkey(name, code),
+      group:groups(name)
     `)
     .order("kickoff_at", { ascending: true });
 
   const { data: predictions } = await supabase
     .from("match_predictions")
     .select("match_id, home_score, away_score, points_earned")
-    .eq("user_id", user!.id);
+    .eq("user_id", user.id);
 
   const { data: results } = await supabase
     .from("match_results")
     .select("match_id, home_score, away_score");
 
-  const predictionMap = new Map(
-    (predictions ?? []).map((p: any) => [p.match_id, p])
-  );
-  const resultMap = new Map(
-    (results ?? []).map((r: any) => [r.match_id, r])
-  );
+  const matches: MatchInput[] = (matchesRaw ?? []).map((m: any) => ({
+    id: m.id,
+    kickoff_at: m.kickoff_at,
+    venue: m.venue,
+    stage: m.stage,
+    group_id: m.group_id,
+    group_name: m.group?.name ?? null,
+    home_team: m.home_team,
+    away_team: m.away_team,
+  }));
 
-  const matchesByStage = new Map<string, any[]>();
-  for (const match of matches ?? []) {
-    const stage = match.stage;
-    if (!matchesByStage.has(stage)) matchesByStage.set(stage, []);
-    matchesByStage.get(stage)!.push(match);
-  }
+  const tree = buildMatchTree(
+    matches,
+    (predictions ?? []) as PredictionInput[],
+    (results ?? []) as ResultInput[]
+  );
+  const defaultOpen = computeDefaultOpen(tree, new Date());
+
+  const empty = !matches.length;
 
   return (
     <div>
       <h1 className="text-xl font-bold mb-4">Partidos</h1>
 
-      {stageOrder.map((stage) => {
-        const stageMatches = matchesByStage.get(stage);
-        if (!stageMatches?.length) return null;
-
-        return (
-          <div key={stage} className="mb-6">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase mb-2">
-              {stageLabels[stage] ?? stage}
-            </h2>
-            <div className="space-y-3">
-              {stageMatches.map((match: any) => (
-                <MatchCard
-                  key={match.id}
-                  match={{
-                    ...match,
-                    home_team: match.home_team as { name: string; code: string },
-                    away_team: match.away_team as { name: string; code: string },
-                  }}
-                  prediction={predictionMap.get(match.id) ?? undefined}
-                  result={resultMap.get(match.id) ?? undefined}
-                />
-              ))}
-            </div>
-          </div>
-        );
-      })}
-
-      {(!matches || matches.length === 0) && (
+      {empty ? (
         <p className="text-gray-400 text-center mt-8">
           No hay partidos disponibles todavía.
         </p>
+      ) : (
+        <PartidosTree tree={tree} defaultOpen={defaultOpen} />
       )}
     </div>
   );
