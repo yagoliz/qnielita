@@ -6,23 +6,26 @@ export function AdminTabs({
   resultadosContent,
   apuestasContent,
   torneoContent,
+  bracketContent,
   invitesContent,
   usuariosContent,
 }: {
   resultadosContent: ReactNode;
   apuestasContent: ReactNode;
   torneoContent: ReactNode;
+  bracketContent: ReactNode;
   invitesContent: ReactNode;
   usuariosContent: ReactNode;
 }) {
   const [tab, setTab] = useState<
-    "resultados" | "apuestas" | "torneo" | "invites" | "usuarios"
+    "resultados" | "apuestas" | "torneo" | "bracket" | "invites" | "usuarios"
   >("resultados");
 
   const tabs = [
     { key: "resultados" as const, label: "Resultados" },
     { key: "apuestas" as const, label: "Locas" },
     { key: "torneo" as const, label: "Torneo" },
+    { key: "bracket" as const, label: "Bracket" },
     { key: "invites" as const, label: "Invites" },
     { key: "usuarios" as const, label: "Usuarios" },
   ];
@@ -31,6 +34,7 @@ export function AdminTabs({
     resultados: resultadosContent,
     apuestas: apuestasContent,
     torneo: torneoContent,
+    bracket: bracketContent,
     invites: invitesContent,
     usuarios: usuariosContent,
   };

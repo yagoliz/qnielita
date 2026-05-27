@@ -176,6 +176,65 @@ export async function resolveTournamentBet(formData: FormData) {
   return { success: true };
 }
 
+export async function assignKnockoutTeam(formData: FormData) {
+  const { supabase } = await requireAdmin();
+
+  const matchId = parseInt(formData.get("match_id") as string, 10);
+  const homeTeamId = parseInt(formData.get("home_team_id") as string, 10);
+  const awayTeamId = parseInt(formData.get("away_team_id") as string, 10);
+
+  if (isNaN(matchId) || isNaN(homeTeamId) || isNaN(awayTeamId)) {
+    return { error: "Datos inválidos." };
+  }
+
+  if (homeTeamId === awayTeamId) {
+    return { error: "Los equipos deben ser diferentes." };
+  }
+
+  const { error } = await supabase
+    .from("matches")
+    .update({
+      home_team_id: homeTeamId,
+      away_team_id: awayTeamId,
+    })
+    .eq("id", matchId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin");
+  revalidatePath("/partidos");
+  return { success: true };
+}
+
+export async function updateBracketConfig(formData: FormData) {
+  const { supabase } = await requireAdmin();
+
+  const unlockAt = formData.get("unlock_at") as string;
+  const lockAt = formData.get("lock_at") as string;
+
+  if (!unlockAt || !lockAt) {
+    return { error: "Ambas fechas son obligatorias." };
+  }
+
+  if (new Date(lockAt) <= new Date(unlockAt)) {
+    return { error: "La fecha de cierre debe ser posterior a la de apertura." };
+  }
+
+  const { error } = await supabase
+    .from("bracket_config")
+    .update({
+      unlock_at: unlockAt,
+      lock_at: lockAt,
+    })
+    .eq("id", 1);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin");
+  revalidatePath("/partidos");
+  return { success: true };
+}
+
 export async function generateInvite(emails?: string[]) {
   const { supabase, user } = await requireAdmin();
 

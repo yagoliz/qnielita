@@ -8,6 +8,8 @@ import { TournamentResolution } from "@/components/admin/tournament-resolution";
 import { InviteManager } from "@/components/admin/invite-manager";
 import { UserOverview } from "@/components/admin/user-overview";
 import type { UserWithStats } from "@/components/admin/user-overview";
+import { TeamAssignment } from "@/components/admin/team-assignment";
+import { BracketConfigEditor } from "@/components/admin/bracket-config";
 import { AdminTabs } from "./tabs";
 
 export default async function AdminPage() {
@@ -107,6 +109,35 @@ export default async function AdminPage() {
     };
   });
 
+  const { data: r32Matches } = await supabase
+    .from("matches")
+    .select(`
+      id, kickoff_at, stage,
+      home_team:teams!matches_home_team_id_fkey(id, name, code),
+      away_team:teams!matches_away_team_id_fkey(id, name, code)
+    `)
+    .eq("stage", "R32")
+    .order("kickoff_at");
+
+  const { data: realTeams } = await supabase
+    .from("teams")
+    .select("id, name, code")
+    .neq("group_id", 13)
+    .order("name");
+
+  const { data: bracketConfig } = await supabase
+    .from("bracket_config")
+    .select("*")
+    .single();
+
+  const formattedR32 = (r32Matches ?? []).map((m: any) => ({
+    id: m.id,
+    kickoff_at: m.kickoff_at,
+    stage: m.stage as string,
+    home_team: m.home_team as { id: number; name: string; code: string } | null,
+    away_team: m.away_team as { id: number; name: string; code: string } | null,
+  }));
+
   const formattedMatches = (matches ?? []).map((m: any) => ({
     id: m.id,
     kickoff_at: m.kickoff_at,
@@ -138,6 +169,17 @@ export default async function AdminPage() {
         }
         torneoContent={
           <TournamentResolution configs={tournamentConfigs ?? []} />
+        }
+        bracketContent={
+          <div className="space-y-4">
+            {bracketConfig && (
+              <BracketConfigEditor config={bracketConfig} />
+            )}
+            <TeamAssignment
+              matches={formattedR32}
+              realTeams={(realTeams ?? []) as any}
+            />
+          </div>
         }
         invitesContent={<InviteManager invites={invitesWithCounts} />}
         usuariosContent={

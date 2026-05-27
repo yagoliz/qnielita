@@ -6,6 +6,7 @@ export type LeaderboardEntry = {
   match_points: number;
   tournament_points: number;
   custom_points: number;
+  bracket_points: number;
   total_points: number;
   rank: number;
 };
@@ -29,6 +30,7 @@ export async function fetchFullLeaderboard(
       match_points: 0,
       tournament_points: 0,
       custom_points: 0,
+      bracket_points: 0,
       total_points: 0,
       rank: 0,
     }

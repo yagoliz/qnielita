@@ -2,9 +2,12 @@ import Link from "next/link";
 import { LayoutGrid, Swords } from "lucide-react";
 import type { TabView } from "@/lib/match-tree";
 
+export type BracketStatus = "not_open" | "open" | "locked";
+
 type Props = {
   activeTab: TabView;
   knockoutAvailable: boolean;
+  bracketStatus: BracketStatus;
 };
 
 function tabClass(active: boolean) {
@@ -13,7 +16,7 @@ function tabClass(active: boolean) {
     : "text-gray-500";
 }
 
-export function PartidosTabs({ activeTab, knockoutAvailable }: Props) {
+export function PartidosTabs({ activeTab, bracketStatus }: Props) {
   const grupos = activeTab === "grupos";
   const eliminatorias = activeTab === "eliminatorias";
 
@@ -29,7 +32,7 @@ export function PartidosTabs({ activeTab, knockoutAvailable }: Props) {
         <LayoutGrid className="size-4 inline mr-1" /> Grupos
       </Link>
 
-      {knockoutAvailable ? (
+      {bracketStatus !== "not_open" ? (
         <Link
           href="/partidos?tab=eliminatorias"
           className={`${base} ${tabClass(eliminatorias)}`}
@@ -38,12 +41,13 @@ export function PartidosTabs({ activeTab, knockoutAvailable }: Props) {
           <Swords className="size-4 inline mr-1" /> Eliminatorias
         </Link>
       ) : (
-        <span
-          className={`${base} text-gray-300 cursor-not-allowed`}
-          aria-disabled="true"
+        <Link
+          href="/partidos?tab=eliminatorias"
+          className={`${base} ${tabClass(eliminatorias)} opacity-60`}
+          aria-current={eliminatorias ? "page" : undefined}
         >
           <Swords className="size-4 inline mr-1" /> Eliminatorias
-        </span>
+        </Link>
       )}
     </div>
   );

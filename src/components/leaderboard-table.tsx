@@ -1,4 +1,4 @@
-import { CircleDot, Trophy, Dices } from "lucide-react";
+import { CircleDot, Trophy, Dices, Swords } from "lucide-react";
 import Link from "next/link";
 
 type LeaderboardEntry = {
@@ -7,6 +7,7 @@ type LeaderboardEntry = {
   match_points: number;
   tournament_points: number;
   custom_points: number;
+  bracket_points: number;
   total_points: number;
   rank: number;
 };
@@ -32,6 +33,7 @@ export function LeaderboardTable({
                 <th className="py-2 px-2 text-center"><CircleDot className="size-3.5 inline" /></th>
                 <th className="py-2 px-2 text-center"><Trophy className="size-3.5 inline" /></th>
                 <th className="py-2 px-2 text-center"><Dices className="size-3.5 inline" /></th>
+                <th className="py-2 px-2 text-center"><Swords className="size-3.5 inline" /></th>
               </>
             )}
             <th className="py-2 px-3 text-right">Pts</th>
@@ -67,6 +69,9 @@ export function LeaderboardTable({
                     </td>
                     <td className="py-2 px-2 text-center text-gray-500">
                       {entry.custom_points}
+                    </td>
+                    <td className="py-2 px-2 text-center text-gray-500">
+                      {entry.bracket_points}
                     </td>
                   </>
                 )}

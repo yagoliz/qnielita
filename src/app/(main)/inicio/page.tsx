@@ -3,7 +3,7 @@ import { LeaderboardTable } from "@/components/leaderboard-table";
 import { fetchFullLeaderboard } from "@/lib/leaderboard";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Trophy, AlertTriangle } from "lucide-react";
+import { Trophy, AlertTriangle, Swords } from "lucide-react";
 
 export default async function InicioPage() {
   const supabase = await createClient();
@@ -43,6 +43,21 @@ export default async function InicioPage() {
     (m: any) => !predictedIds.has(m.id)
   ).length;
 
+  const { data: bracketConfig } = await supabase
+    .from("bracket_config")
+    .select("unlock_at, lock_at")
+    .single();
+
+  const { data: bracketPreds } = await supabase
+    .from("bracket_predictions")
+    .select("match_id")
+    .eq("user_id", user!.id);
+
+  const hasBracket = (bracketPreds ?? []).length > 0;
+  const bracketOpen = bracketConfig
+    && new Date(bracketConfig.unlock_at) <= new Date()
+    && new Date(bracketConfig.lock_at) > new Date();
+
   const { data: recentResults } = await supabase
     .from("match_results")
     .select(`
@@ -81,6 +96,18 @@ export default async function InicioPage() {
             <AlertTriangle className="size-4 inline mr-1" />
             Tienes <span className="font-bold">{pendingCount} partidos</span> sin
             predicción.
+          </p>
+        </Link>
+      )}
+
+      {bracketOpen && !hasBracket && (
+        <Link
+          href="/partidos?tab=eliminatorias"
+          className="block bg-blue-50 rounded-xl p-4 border border-blue-200"
+        >
+          <p className="text-sm text-blue-800">
+            <Swords className="size-4 inline mr-1" />
+            ¡Las predicciones de eliminatorias están abiertas! Completa tu bracket.
           </p>
         </Link>
       )}
