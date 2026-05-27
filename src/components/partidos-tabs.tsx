@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LayoutGrid, Swords } from "lucide-react";
 import type { TabView } from "@/lib/match-tree";
 
 type Props = {
@@ -8,40 +9,42 @@ type Props = {
 
 function tabClass(active: boolean) {
   return active
-    ? "text-green-600 border-b-2 border-green-600"
-    : "text-gray-500 border-b border-gray-200 hover:text-gray-700";
+    ? "bg-white shadow-sm text-green-600"
+    : "text-gray-500";
 }
 
 export function PartidosTabs({ activeTab, knockoutAvailable }: Props) {
   const grupos = activeTab === "grupos";
   const eliminatorias = activeTab === "eliminatorias";
 
+  const base = "flex-1 py-2 text-sm font-medium rounded-md text-center";
+
   return (
-    <nav className="grid grid-cols-2 mb-4" aria-label="Secciones de partidos">
+    <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-4">
       <Link
         href="/partidos?tab=grupos"
-        className={`text-center py-3 text-sm font-medium ${tabClass(grupos)}`}
+        className={`${base} ${tabClass(grupos)}`}
         aria-current={grupos ? "page" : undefined}
       >
-        Fase de Grupos
+        <LayoutGrid className="size-4 inline mr-1" /> Grupos
       </Link>
 
       {knockoutAvailable ? (
         <Link
           href="/partidos?tab=eliminatorias"
-          className={`text-center py-3 text-sm font-medium ${tabClass(eliminatorias)}`}
+          className={`${base} ${tabClass(eliminatorias)}`}
           aria-current={eliminatorias ? "page" : undefined}
         >
-          Eliminatorias
+          <Swords className="size-4 inline mr-1" /> Eliminatorias
         </Link>
       ) : (
         <span
-          className="text-center py-3 text-sm font-medium text-gray-300 border-b border-gray-200 cursor-not-allowed"
+          className={`${base} text-gray-300 cursor-not-allowed`}
           aria-disabled="true"
         >
-          Eliminatorias <span className="text-xs">· próximamente</span>
+          <Swords className="size-4 inline mr-1" /> Eliminatorias
         </span>
       )}
-    </nav>
+    </div>
   );
 }
