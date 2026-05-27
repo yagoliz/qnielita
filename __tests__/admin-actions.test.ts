@@ -17,6 +17,7 @@ const mockDeleteUser = vi.fn(() => Promise.resolve({ error: null }));
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: vi.fn(() => ({
+    from: mockFrom,
     auth: { admin: { deleteUser: mockDeleteUser } },
   })),
 }));

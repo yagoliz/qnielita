@@ -5,7 +5,7 @@ import {
   resolveActiveTab,
   sliceTree,
   type MatchInput,
-} from "./match-tree";
+} from "@/lib/match-tree";
 
 describe("buildMatchTree", () => {
   it("returns empty tree for empty input", () => {
