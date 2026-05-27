@@ -3,6 +3,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import {
+  computeGroupStandings,
+  resolveGroupCode,
+  type GroupStageResult,
+  type Standing,
+} from "@/lib/group-standings";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -204,6 +210,138 @@ export async function assignKnockoutTeam(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/partidos");
   return { success: true };
+}
+
+export async function autoFillR32FromGroups(): Promise<
+  | { error: string }
+  | {
+      assigned: number;
+      skipped: Array<{ matchId: number; code: string; reason: string }>;
+    }
+> {
+  const { supabase } = await requireAdmin();
+
+  const { data: groupMatches, error: groupErr } = await supabase
+    .from("matches")
+    .select(
+      "id, group_id, home_team_id, away_team_id, match_results(home_score, away_score)"
+    )
+    .eq("stage", "group");
+  if (groupErr) return { error: groupErr.message };
+
+  const missing = (groupMatches ?? []).filter(
+    (m) => !m.match_results || (Array.isArray(m.match_results) && m.match_results.length === 0)
+  );
+  if (missing.length > 0) {
+    return {
+      error: `Faltan resultados de fase de grupos (${missing.length} partidos pendientes).`,
+    };
+  }
+
+  const { data: groups, error: groupsErr } = await supabase
+    .from("groups")
+    .select("id, name");
+  if (groupsErr) return { error: groupsErr.message };
+
+  const { data: teams, error: teamsErr } = await supabase
+    .from("teams")
+    .select("id, code, group_id");
+  if (teamsErr) return { error: teamsErr.message };
+
+  const { data: r32Matches, error: r32Err } = await supabase
+    .from("matches")
+    .select(
+      "id, home_team_id, away_team_id, home:home_team_id(code), away:away_team_id(code)"
+    )
+    .eq("stage", "R32");
+  if (r32Err) return { error: r32Err.message };
+
+  const groupNameById = new Map<number, string>(
+    (groups ?? []).map((g) => [g.id, g.name])
+  );
+  const teamsByGroupName = new Map<string, number[]>();
+  for (const t of teams ?? []) {
+    const name = groupNameById.get(t.group_id);
+    if (!name || name === "KO") continue;
+    const list = teamsByGroupName.get(name) ?? [];
+    list.push(t.id);
+    teamsByGroupName.set(name, list);
+  }
+
+  const resultsByGroupName = new Map<string, GroupStageResult[]>();
+  for (const m of groupMatches ?? []) {
+    if (m.group_id == null) continue;
+    const name = groupNameById.get(m.group_id);
+    if (!name) continue;
+    const res = Array.isArray(m.match_results) ? m.match_results[0] : m.match_results;
+    if (!res) continue;
+    const list = resultsByGroupName.get(name) ?? [];
+    list.push({
+      match_id: m.id,
+      group_id: m.group_id,
+      home_team_id: m.home_team_id!,
+      away_team_id: m.away_team_id!,
+      home_score: res.home_score,
+      away_score: res.away_score,
+    });
+    resultsByGroupName.set(name, list);
+  }
+
+  const standingsByGroupName = new Map<string, Standing[]>();
+  for (const [name, teamIds] of teamsByGroupName) {
+    const results = resultsByGroupName.get(name) ?? [];
+    standingsByGroupName.set(name, computeGroupStandings(teamIds, results));
+  }
+
+  type Pending = { matchId: number; homeId: number; awayId: number };
+  const updates: Pending[] = [];
+  const skipped: Array<{ matchId: number; code: string; reason: string }> = [];
+
+  for (const m of r32Matches ?? []) {
+    const homeCode = (m.home as unknown as { code: string } | null)?.code ?? "";
+    const awayCode = (m.away as unknown as { code: string } | null)?.code ?? "";
+
+    let homeId = m.home_team_id!;
+    let awayId = m.away_team_id!;
+    let touched = false;
+
+    if (/^[12][A-L]$/.test(homeCode)) {
+      const resolved = resolveGroupCode(homeCode, standingsByGroupName);
+      if (resolved == null) {
+        skipped.push({ matchId: m.id, code: homeCode, reason: "Empate sin desempatar" });
+      } else {
+        homeId = resolved;
+        touched = true;
+      }
+    }
+    if (/^[12][A-L]$/.test(awayCode)) {
+      const resolved = resolveGroupCode(awayCode, standingsByGroupName);
+      if (resolved == null) {
+        skipped.push({ matchId: m.id, code: awayCode, reason: "Empate sin desempatar" });
+      } else {
+        awayId = resolved;
+        touched = true;
+      }
+    }
+
+    if (touched && homeId !== awayId) {
+      updates.push({ matchId: m.id, homeId, awayId });
+    }
+  }
+
+  let assigned = 0;
+  for (const u of updates) {
+    const { error } = await supabase
+      .from("matches")
+      .update({ home_team_id: u.homeId, away_team_id: u.awayId })
+      .eq("id", u.matchId);
+    if (error) return { error: error.message };
+    assigned++;
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/partidos");
+  return { assigned, skipped };
 }
 
 export async function updateBracketConfig(formData: FormData) {

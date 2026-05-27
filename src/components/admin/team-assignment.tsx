@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { assignKnockoutTeam } from "@/actions/admin";
+import { assignKnockoutTeam, autoFillR32FromGroups } from "@/actions/admin";
 
 type Team = { id: number; name: string; code: string };
 type Match = {
@@ -28,6 +28,7 @@ export function TeamAssignment({
       <p className="text-xs text-gray-500 mb-2">
         Asigna los equipos reales a cada partido de dieciseisavos.
       </p>
+      <AutoFillButton />
       {r32Matches.map((match) => (
         <TeamAssignmentRow
           key={match.id}
@@ -36,6 +37,48 @@ export function TeamAssignment({
         />
       ))}
     </div>
+  );
+}
+
+function AutoFillButton() {
+  const [state, formAction, pending] = useActionState(
+    async () => await autoFillR32FromGroups(),
+    null as Awaited<ReturnType<typeof autoFillR32FromGroups>> | null
+  );
+
+  return (
+    <form action={formAction} className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs text-gray-600">
+          Asigna automáticamente 1º y 2º de cada grupo desde los resultados.
+          Los 3º se asignan a mano.
+        </div>
+        <button
+          type="submit"
+          disabled={pending}
+          className="bg-green-600 text-white text-xs px-3 py-1.5 rounded-md font-medium hover:bg-green-700 disabled:opacity-50 shrink-0"
+        >
+          {pending ? "..." : "Auto-rellenar"}
+        </button>
+      </div>
+
+      {state && "error" in state && (
+        <p className="mt-2 text-red-600 text-xs">{state.error}</p>
+      )}
+      {state && "assigned" in state && (
+        <div className="mt-2 text-xs">
+          <p className="text-green-700">
+            Asignados {state.assigned} equipos.
+          </p>
+          {state.skipped.length > 0 && (
+            <p className="text-amber-700 mt-1">
+              {state.skipped.length} sin asignar (asígnalos a mano abajo):{" "}
+              {state.skipped.map((s) => s.code).join(", ")}
+            </p>
+          )}
+        </div>
+      )}
+    </form>
   );
 }
 
@@ -75,7 +118,7 @@ function TeamAssignmentRow({
         <select
           name="home_team_id"
           defaultValue={match.home_team?.id}
-          className="flex-1 text-sm border rounded-md px-2 py-1.5"
+          className="flex-1 min-w-0 text-sm border rounded-md px-2 py-1.5"
         >
           {homePlaceholder && (
             <option value={match.home_team!.id}>
@@ -94,7 +137,7 @@ function TeamAssignmentRow({
         <select
           name="away_team_id"
           defaultValue={match.away_team?.id}
-          className="flex-1 text-sm border rounded-md px-2 py-1.5"
+          className="flex-1 min-w-0 text-sm border rounded-md px-2 py-1.5"
         >
           {awayPlaceholder && (
             <option value={match.away_team!.id}>
