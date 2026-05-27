@@ -53,7 +53,7 @@ export function AdminTabs({
         ))}
       </div>
 
-      {contentMap[tab]}
+      <div key={tab}>{contentMap[tab]}</div>
     </div>
   );
 }

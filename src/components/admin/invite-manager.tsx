@@ -35,6 +35,7 @@ export function InviteManager({ invites }: { invites: Invite[] }) {
   const [newToken, setNewToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [emailsText, setEmailsText] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   function parseEmails(text: string): string[] {
     return text
@@ -45,11 +46,14 @@ export function InviteManager({ invites }: { invites: Invite[] }) {
 
   async function handleGenerate() {
     setLoading(true);
+    setError(null);
     const emails = parseEmails(emailsText);
     const result = await generateInvite(emails.length > 0 ? emails : undefined);
     if (result.token) {
       setNewToken(result.token);
       setEmailsText("");
+    } else if (result.error) {
+      setError(result.error);
     }
     setLoading(false);
   }
@@ -83,6 +87,10 @@ export function InviteManager({ invites }: { invites: Invite[] }) {
       >
         {loading ? "Generando..." : "Generar enlace de invitación"}
       </button>
+
+      {error && (
+        <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</p>
+      )}
 
       {newToken && (
         <div className="bg-green-50 rounded-lg p-3 border border-green-200">
