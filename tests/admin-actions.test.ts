@@ -101,6 +101,153 @@ describe("removeUser", () => {
   });
 });
 
+describe("submitMatchResult", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  function makeFormData(fields: Record<string, string>): FormData {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+    return fd;
+  }
+
+  it("saves a group stage result without penalty_winner", async () => {
+    setupAdmin("admin-id");
+    const mockUpsert = vi.fn(() =>
+      Promise.resolve({ error: null })
+    );
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "profiles") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn(() =>
+                Promise.resolve({ data: { is_admin: true }, error: null })
+              ),
+            })),
+          })),
+        };
+      }
+      if (table === "match_results") {
+        return { upsert: mockUpsert };
+      }
+      return {};
+    });
+
+    const { submitMatchResult } = await import("@/actions/admin");
+    const result = await submitMatchResult(
+      makeFormData({ match_id: "1", home_score: "2", away_score: "1", stage: "group" })
+    );
+    expect(result).toEqual({ success: true });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ home_score: 2, away_score: 1, penalty_winner: null }),
+      { onConflict: "match_id" }
+    );
+  });
+
+  it("requires penalty_winner for tied knockout match", async () => {
+    setupAdmin("admin-id");
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "profiles") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn(() =>
+                Promise.resolve({ data: { is_admin: true }, error: null })
+              ),
+            })),
+          })),
+        };
+      }
+      return {};
+    });
+
+    const { submitMatchResult } = await import("@/actions/admin");
+    const result = await submitMatchResult(
+      makeFormData({ match_id: "1", home_score: "2", away_score: "2", stage: "QF" })
+    );
+    expect(result).toEqual({
+      error: "Debes indicar quién avanzó en penales.",
+    });
+  });
+
+  it("saves tied knockout match with penalty_winner", async () => {
+    setupAdmin("admin-id");
+    const mockUpsert = vi.fn(() =>
+      Promise.resolve({ error: null })
+    );
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "profiles") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn(() =>
+                Promise.resolve({ data: { is_admin: true }, error: null })
+              ),
+            })),
+          })),
+        };
+      }
+      if (table === "match_results") {
+        return { upsert: mockUpsert };
+      }
+      return {};
+    });
+
+    const { submitMatchResult } = await import("@/actions/admin");
+    const result = await submitMatchResult(
+      makeFormData({
+        match_id: "1", home_score: "2", away_score: "2",
+        stage: "QF", penalty_winner: "home",
+      })
+    );
+    expect(result).toEqual({ success: true });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ penalty_winner: "home" }),
+      { onConflict: "match_id" }
+    );
+  });
+
+  it("clears penalty_winner when knockout scores are not tied", async () => {
+    setupAdmin("admin-id");
+    const mockUpsert = vi.fn(() =>
+      Promise.resolve({ error: null })
+    );
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "profiles") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn(() =>
+                Promise.resolve({ data: { is_admin: true }, error: null })
+              ),
+            })),
+          })),
+        };
+      }
+      if (table === "match_results") {
+        return { upsert: mockUpsert };
+      }
+      return {};
+    });
+
+    const { submitMatchResult } = await import("@/actions/admin");
+    const result = await submitMatchResult(
+      makeFormData({
+        match_id: "1", home_score: "3", away_score: "1",
+        stage: "R16", penalty_winner: "home",
+      })
+    );
+    expect(result).toEqual({ success: true });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ penalty_winner: null }),
+      { onConflict: "match_id" }
+    );
+  });
+});
+
 describe("updateUserProfile", () => {
   beforeEach(() => {
     vi.clearAllMocks();

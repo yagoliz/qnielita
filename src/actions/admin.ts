@@ -29,10 +29,22 @@ export async function submitMatchResult(formData: FormData) {
   const matchId = parseInt(formData.get("match_id") as string, 10);
   const homeScore = parseInt(formData.get("home_score") as string, 10);
   const awayScore = parseInt(formData.get("away_score") as string, 10);
+  const stage = formData.get("stage") as string;
+  const penaltyWinnerRaw = formData.get("penalty_winner") as string | null;
 
   if (isNaN(matchId) || isNaN(homeScore) || isNaN(awayScore)) {
     return { error: "Datos inválidos." };
   }
+
+  const isKnockout = stage !== "group";
+  const isTied = homeScore === awayScore;
+
+  if (isKnockout && isTied && !penaltyWinnerRaw) {
+    return { error: "Debes indicar quién avanzó en penales." };
+  }
+
+  const penaltyWinner =
+    isKnockout && isTied ? penaltyWinnerRaw : null;
 
   const { error } = await supabase
     .from("match_results")
@@ -41,7 +53,7 @@ export async function submitMatchResult(formData: FormData) {
         match_id: matchId,
         home_score: homeScore,
         away_score: awayScore,
-        source: "manual" as const,
+        penalty_winner: penaltyWinner,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "match_id" }
