@@ -1,8 +1,8 @@
 "use client";
 
-import { generateInvite } from "@/actions/admin";
-import { useState } from "react";
-import { Check, CheckCircle, Clock } from "lucide-react";
+import { deleteInvite, generateInvite } from "@/actions/admin";
+import { useState, useTransition } from "react";
+import { Check, CheckCircle, Clock, Copy, Trash2 } from "lucide-react";
 
 type Invite = {
   id: string;
@@ -25,9 +25,43 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="shrink-0 text-xs text-green-700 hover:text-green-900 font-medium"
+      aria-label={copied ? "Copiado" : "Copiar enlace"}
+      title={copied ? "Copiado" : "Copiar enlace"}
+      className="shrink-0 p-1.5 rounded-md text-green-700 hover:text-green-900 hover:bg-green-50"
     >
-      {copied ? <><Check className="size-3 inline mr-0.5" /> Copiado</> : "Copiar"}
+      {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+    </button>
+  );
+}
+
+function DeleteInviteButton({ inviteId }: { inviteId: string }) {
+  const [isPending, startTransition] = useTransition();
+  const [confirming, setConfirming] = useState(false);
+
+  function handleClick() {
+    if (!confirming) {
+      setConfirming(true);
+      setTimeout(() => setConfirming(false), 3000);
+      return;
+    }
+    startTransition(async () => {
+      await deleteInvite(inviteId);
+    });
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={isPending}
+      aria-label={confirming ? "Confirmar eliminación" : "Eliminar enlace"}
+      title={confirming ? "Pulsa de nuevo para confirmar" : "Eliminar enlace"}
+      className={`shrink-0 p-1.5 rounded-md disabled:opacity-50 ${
+        confirming
+          ? "text-white bg-red-600 hover:bg-red-700"
+          : "text-red-600 hover:text-red-800 hover:bg-red-50"
+      }`}
+    >
+      <Trash2 className="size-4" />
     </button>
   );
 }
@@ -124,12 +158,15 @@ export function InviteManager({ invites }: { invites: Invite[] }) {
               className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 text-xs"
             >
               <div className="flex items-start justify-between gap-2">
-                <p className="font-mono truncate">{invite.token}</p>
-                {!isFull && (
-                  <CopyButton
-                    text={`${baseUrl}/registro?token=${invite.token}`}
-                  />
-                )}
+                <p className="font-mono truncate flex-1 self-center">{invite.token}</p>
+                <div className="flex items-center gap-1 shrink-0">
+                  {!isFull && (
+                    <CopyButton
+                      text={`${baseUrl}/registro?token=${invite.token}`}
+                    />
+                  )}
+                  <DeleteInviteButton inviteId={invite.id} />
+                </div>
               </div>
               <div className="text-gray-400 mt-1 space-y-0.5">
                 <p>

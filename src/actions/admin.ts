@@ -115,6 +115,28 @@ export async function resolveCustomBet(formData: FormData) {
   return { success: true };
 }
 
+export async function deleteCustomBet(betId: string) {
+  await requireAdmin();
+
+  if (!betId) return { error: "Falta el identificador de la apuesta." };
+
+  const adminSupabase = createAdminClient();
+  const { error } = await adminSupabase
+    .from("custom_bets")
+    .delete()
+    .eq("id", betId);
+
+  if (error) return { error: error.message };
+
+  await adminSupabase.rpc("recalculate_leaderboard");
+
+  revalidatePath("/admin");
+  revalidatePath("/apuestas");
+  revalidatePath("/clasificacion");
+  revalidatePath("/inicio");
+  return { success: true };
+}
+
 export async function resolveTournamentBet(formData: FormData) {
   const { supabase } = await requireAdmin();
 
@@ -160,6 +182,21 @@ export async function generateInvite(emails?: string[]) {
 
   revalidatePath("/admin");
   return { token: data.token };
+}
+
+export async function deleteInvite(inviteId: string) {
+  await requireAdmin();
+
+  const adminSupabase = createAdminClient();
+  const { error } = await adminSupabase
+    .from("invites")
+    .delete()
+    .eq("id", inviteId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin");
+  return { success: true };
 }
 
 export async function toggleUserAdmin(userId: string) {

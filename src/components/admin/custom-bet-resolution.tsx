@@ -1,7 +1,8 @@
 "use client";
 
-import { resolveCustomBet } from "@/actions/admin";
-import { useActionState } from "react";
+import { deleteCustomBet, resolveCustomBet } from "@/actions/admin";
+import { useActionState, useState, useTransition } from "react";
+import { Trash2 } from "lucide-react";
 
 type CustomBet = {
   id: string;
@@ -12,6 +13,44 @@ type CustomBet = {
   lock_at: string;
   correct_answer: string | null;
 };
+
+function DeleteCustomBetButton({ betId }: { betId: string }) {
+  const [isPending, startTransition] = useTransition();
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleClick() {
+    if (!confirming) {
+      setConfirming(true);
+      setTimeout(() => setConfirming(false), 3000);
+      return;
+    }
+    startTransition(async () => {
+      const result = await deleteCustomBet(betId);
+      if (result?.error) setError(result.error);
+    });
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={isPending}
+        aria-label={confirming ? "Confirmar eliminación" : "Eliminar apuesta"}
+        title={confirming ? "Pulsa de nuevo para confirmar" : "Eliminar apuesta"}
+        className={`shrink-0 p-1.5 rounded-md disabled:opacity-50 ${
+          confirming
+            ? "text-white bg-red-600 hover:bg-red-700"
+            : "text-red-600 hover:text-red-800 hover:bg-red-50"
+        }`}
+      >
+        <Trash2 className="size-4" />
+      </button>
+      {error && <p className="text-red-600 text-xs">{error}</p>}
+    </>
+  );
+}
 
 function SingleCustomBetForm({ bet }: { bet: CustomBet }) {
   const [state, formAction, pending] = useActionState(
@@ -29,9 +68,12 @@ function SingleCustomBetForm({ bet }: { bet: CustomBet }) {
       className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-3"
     >
       <input type="hidden" name="bet_id" value={bet.id} />
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="font-semibold text-sm">{bet.question}</span>
-        <span className="text-xs text-gray-400 shrink-0">{bet.points_value} pts</span>
+      <div className="flex items-start justify-between gap-2">
+        <span className="font-semibold text-sm flex-1">{bet.question}</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-gray-400">{bet.points_value} pts</span>
+          <DeleteCustomBetButton betId={bet.id} />
+        </div>
       </div>
 
       {!isLocked && (
