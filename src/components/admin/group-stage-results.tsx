@@ -10,14 +10,12 @@ function formatDate(dateStr: string): string {
 }
 
 export function GroupStageResults({ matches }: { matches: Match[] }) {
-  const pastMatches = matches
-    .filter((m) => new Date(m.kickoff_at) <= new Date())
-    .sort(
-      (a, b) =>
-        new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime()
-    );
+  const sorted = [...matches].sort(
+    (a, b) =>
+      new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime()
+  );
 
-  if (pastMatches.length === 0) {
+  if (sorted.length === 0) {
     return (
       <p className="text-gray-400 text-sm text-center py-8">
         No hay partidos de fase de grupos disponibles aún.
@@ -26,7 +24,7 @@ export function GroupStageResults({ matches }: { matches: Match[] }) {
   }
 
   const groupedByDate = new Map<string, Match[]>();
-  for (const m of pastMatches) {
+  for (const m of sorted) {
     const key = formatDate(m.kickoff_at);
     const arr = groupedByDate.get(key) ?? [];
     arr.push(m);

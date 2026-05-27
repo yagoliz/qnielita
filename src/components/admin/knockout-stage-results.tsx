@@ -10,14 +10,10 @@ const KNOCKOUT_ROUNDS = [
 ] as const;
 
 export function KnockoutStageResults({ matches }: { matches: Match[] }) {
-  const pastMatches = matches.filter(
-    (m) => new Date(m.kickoff_at) <= new Date()
-  );
-
   return (
     <div className="space-y-4">
       {KNOCKOUT_ROUNDS.map(({ stage, label }) => {
-        const roundMatches = pastMatches
+        const roundMatches = matches
           .filter((m) => m.stage === stage)
           .sort(
             (a, b) =>

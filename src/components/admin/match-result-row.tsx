@@ -39,17 +39,20 @@ export function MatchResultRow({ match }: { match: Match }) {
     null
   );
 
+  const isFuture = new Date(match.kickoff_at) > new Date();
   const isKnockout = match.stage !== "group";
   const homeNum = parseInt(homeScore, 10);
   const awayNum = parseInt(awayScore, 10);
   const isTied =
     !isNaN(homeNum) && !isNaN(awayNum) && homeNum === awayNum;
-  const showPenaltyPicker = isKnockout && isTied;
+  const showPenaltyPicker = isKnockout && isTied && !isFuture;
 
   return (
     <form
       action={formAction}
-      className="bg-white rounded-lg p-3 shadow-sm border border-gray-100"
+      className={`bg-white rounded-lg p-3 shadow-sm border border-gray-100 ${
+        isFuture ? "opacity-50" : ""
+      }`}
     >
       <input type="hidden" name="match_id" value={match.id} />
       <input type="hidden" name="stage" value={match.stage} />
@@ -74,11 +77,12 @@ export function MatchResultRow({ match }: { match: Match }) {
             type="number"
             min={0}
             value={homeScore}
+            disabled={isFuture}
             onChange={(e) => {
               setHomeScore(e.target.value);
               setPenaltyWinner(null);
             }}
-            className="w-12 h-8 text-center border rounded text-sm"
+            className="w-12 h-8 text-center border rounded text-sm disabled:bg-gray-50"
           />
           <span>-</span>
           <input
@@ -86,19 +90,22 @@ export function MatchResultRow({ match }: { match: Match }) {
             type="number"
             min={0}
             value={awayScore}
+            disabled={isFuture}
             onChange={(e) => {
               setAwayScore(e.target.value);
               setPenaltyWinner(null);
             }}
-            className="w-12 h-8 text-center border rounded text-sm"
+            className="w-12 h-8 text-center border rounded text-sm disabled:bg-gray-50"
           />
-          <button
-            type="submit"
-            disabled={pending || (showPenaltyPicker && !penaltyWinner)}
-            className="ml-2 px-3 py-1 bg-green-600 text-white text-xs rounded font-medium disabled:opacity-50"
-          >
-            {match.result ? "Actualizar" : "Guardar"}
-          </button>
+          {!isFuture && (
+            <button
+              type="submit"
+              disabled={pending || (showPenaltyPicker && !penaltyWinner)}
+              className="ml-2 px-3 py-1 bg-green-600 text-white text-xs rounded font-medium disabled:opacity-50"
+            >
+              {match.result ? "Actualizar" : "Guardar"}
+            </button>
+          )}
         </div>
       </div>
 

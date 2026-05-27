@@ -32,7 +32,7 @@ export default async function AdminPage() {
       id, kickoff_at, stage,
       home_team:teams!matches_home_team_id_fkey(name, code),
       away_team:teams!matches_away_team_id_fkey(name, code),
-      group:groups!matches_group_id_fkey(name),
+      group:groups(name),
       result:match_results(home_score, away_score, penalty_winner)
     `)
     .order("kickoff_at", { ascending: false });
