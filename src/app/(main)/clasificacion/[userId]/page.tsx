@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { CircleDot, Trophy, Dices } from "lucide-react";
+import { fetchFullLeaderboard } from "@/lib/leaderboard";
 
 export default async function UserDetailPage({
   params,
@@ -18,11 +19,8 @@ export default async function UserDetailPage({
 
   if (!profile) notFound();
 
-  const { data: leaderboardEntry } = await supabase
-    .from("leaderboard")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
+  const allEntries = await fetchFullLeaderboard(supabase as any);
+  const leaderboardEntry = allEntries.find((e) => e.user_id === userId) ?? null;
 
   const { data: predictions } = await supabase
     .from("match_predictions")

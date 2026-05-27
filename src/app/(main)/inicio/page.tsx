@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { LeaderboardTable } from "@/components/leaderboard-table";
+import { fetchFullLeaderboard } from "@/lib/leaderboard";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Trophy, AlertTriangle } from "lucide-react";
@@ -12,17 +13,9 @@ export default async function InicioPage() {
 
   if (!user) redirect("/login");
 
-  const { data: topEntries } = await supabase
-    .from("leaderboard")
-    .select("*")
-    .order("rank", { ascending: true })
-    .limit(5);
-
-  const { data: myRank } = await supabase
-    .from("leaderboard")
-    .select("rank, total_points")
-    .eq("user_id", user!.id)
-    .single();
+  const allEntries = await fetchFullLeaderboard(supabase as any);
+  const topEntries = allEntries.slice(0, 5);
+  const myRank = allEntries.find((e) => e.user_id === user!.id) ?? null;
 
   const { data: upcomingMatches } = await supabase
     .from("matches")
@@ -92,7 +85,7 @@ export default async function InicioPage() {
         </Link>
       )}
 
-      {topEntries?.length ? (
+      {topEntries.length ? (
         <div>
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-sm font-semibold text-gray-500 uppercase">
