@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
-import { ResultEntryForm } from "@/components/admin/result-entry-form";
+import { ResultadosTabs } from "@/components/admin/resultados-tabs";
 import { CustomBetForm } from "@/components/admin/custom-bet-form";
 import { CustomBetResolution } from "@/components/admin/custom-bet-resolution";
 import { TournamentResolution } from "@/components/admin/tournament-resolution";
@@ -32,7 +32,8 @@ export default async function AdminPage() {
       id, kickoff_at, stage,
       home_team:teams!matches_home_team_id_fkey(name, code),
       away_team:teams!matches_away_team_id_fkey(name, code),
-      result:match_results(home_score, away_score)
+      group:groups!matches_group_id_fkey(name),
+      result:match_results(home_score, away_score, penalty_winner)
     `)
     .order("kickoff_at", { ascending: false });
 
@@ -109,16 +110,26 @@ export default async function AdminPage() {
   const formattedMatches = (matches ?? []).map((m: any) => ({
     id: m.id,
     kickoff_at: m.kickoff_at,
+    stage: m.stage as string,
     home_team: m.home_team as { name: string; code: string },
     away_team: m.away_team as { name: string; code: string },
+    group_name: (m.group as { name: string } | null)?.name ?? null,
     result: m.result?.[0] ?? null,
   }));
+
+  const groupMatches = formattedMatches.filter((m) => m.stage === "group");
+  const knockoutMatches = formattedMatches.filter((m) => m.stage !== "group");
 
   return (
     <div>
       <h1 className="text-xl font-bold mb-4">Admin</h1>
       <AdminTabs
-        resultadosContent={<ResultEntryForm matches={formattedMatches} />}
+        resultadosContent={
+          <ResultadosTabs
+            groupMatches={groupMatches}
+            knockoutMatches={knockoutMatches}
+          />
+        }
         apuestasContent={
           <div className="space-y-4">
             <CustomBetForm />
