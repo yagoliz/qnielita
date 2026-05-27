@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildMatchTree } from "./match-tree";
+import { buildMatchTree, type MatchInput } from "./match-tree";
 
 describe("buildMatchTree", () => {
   it("returns empty tree for empty input", () => {
@@ -79,5 +79,48 @@ describe("buildMatchTree", () => {
     expect(group.matchdays).toHaveLength(3);
     expect(group.matchdays[2].matches).toHaveLength(1);
     expect(group.matchdays[2].totalCount).toBe(1);
+  });
+
+  it("builds knockout sections in stage order with labels", () => {
+    const matches: MatchInput[] = [
+      {
+        id: 100,
+        kickoff_at: "2026-07-15T18:00:00Z",
+        venue: null,
+        stage: "R16",
+        group_id: null,
+        group_name: null,
+        home_team: { name: "W1A", code: "W1A" },
+        away_team: { name: "R2C", code: "R2C" },
+      },
+      {
+        id: 101,
+        kickoff_at: "2026-07-20T18:00:00Z",
+        venue: null,
+        stage: "QF",
+        group_id: null,
+        group_name: null,
+        home_team: { name: "QF1", code: "QF1" },
+        away_team: { name: "QF2", code: "QF2" },
+      },
+      {
+        id: 102,
+        kickoff_at: "2026-07-05T18:00:00Z",
+        venue: null,
+        stage: "R32",
+        group_id: null,
+        group_name: null,
+        home_team: { name: "R32A", code: "R32A" },
+        away_team: { name: "R32B", code: "R32B" },
+      },
+    ];
+
+    const tree = buildMatchTree(matches, [], []);
+    expect(tree.knockout.map((k) => k.stage)).toEqual(["R32", "R16", "QF"]);
+    expect(tree.knockout[0].label).toBe("Dieciseisavos");
+    expect(tree.knockout[1].label).toBe("Octavos de Final");
+    expect(tree.knockout[2].label).toBe("Cuartos de Final");
+    expect(tree.knockout[1].matches[0].id).toBe(100);
+    expect(tree.knockout[1].totalCount).toBe(1);
   });
 });

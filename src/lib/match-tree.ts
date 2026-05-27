@@ -182,5 +182,31 @@ export function buildMatchTree(
 
   groups.sort((a, b) => a.name.localeCompare(b.name));
 
-  return { groupStage: { groups }, knockout: [] };
+  const byStage = new Map<KnockoutStage, MatchInput[]>();
+  for (const m of matches) {
+    if (m.stage === "group") continue;
+    const stage = m.stage as KnockoutStage;
+    const bucket = byStage.get(stage) ?? [];
+    bucket.push(m);
+    byStage.set(stage, bucket);
+  }
+
+  const knockout: KnockoutNode[] = [];
+  for (const stage of KNOCKOUT_STAGE_ORDER) {
+    const stageMatches = byStage.get(stage);
+    if (!stageMatches?.length) continue;
+    const sorted = [...stageMatches]
+      .sort((a, b) => a.kickoff_at.localeCompare(b.kickoff_at))
+      .map(enrich);
+    const predictedCount = sorted.filter((m) => m.prediction).length;
+    knockout.push({
+      stage,
+      label: KNOCKOUT_LABELS[stage],
+      matches: sorted,
+      predictedCount,
+      totalCount: sorted.length,
+    });
+  }
+
+  return { groupStage: { groups }, knockout };
 }
