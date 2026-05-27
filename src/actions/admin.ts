@@ -163,13 +163,15 @@ export async function generateInvite(emails?: string[]) {
 }
 
 export async function toggleUserAdmin(userId: string) {
-  const { supabase, user } = await requireAdmin();
+  const { user } = await requireAdmin();
 
   if (userId === user.id) {
     return { error: "No puedes cambiar tu propio rol de admin." };
   }
 
-  const { data: target, error: fetchError } = await supabase
+  const adminSupabase = createAdminClient();
+
+  const { data: target, error: fetchError } = await adminSupabase
     .from("profiles")
     .select("is_admin")
     .eq("id", userId)
@@ -177,7 +179,7 @@ export async function toggleUserAdmin(userId: string) {
 
   if (fetchError || !target) return { error: "Usuario no encontrado." };
 
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("profiles")
     .update({ is_admin: !target.is_admin })
     .eq("id", userId);
@@ -191,7 +193,7 @@ export async function updateUserProfile(
   userId: string,
   data: { display_name?: string; avatar_emoji?: string }
 ) {
-  const { supabase } = await requireAdmin();
+  await requireAdmin();
 
   const updates: Record<string, string> = {};
   if (data.display_name?.trim()) updates.display_name = data.display_name.trim();
@@ -201,7 +203,8 @@ export async function updateUserProfile(
     return { error: "No hay cambios." };
   }
 
-  const { error } = await supabase
+  const adminSupabase = createAdminClient();
+  const { error } = await adminSupabase
     .from("profiles")
     .update(updates)
     .eq("id", userId);
