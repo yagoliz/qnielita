@@ -33,8 +33,12 @@ type MatchCardProps = {
   };
 };
 
+const GROUP_STAGE_LOCK = new Date("2026-06-11T18:00:00Z");
+
 export function MatchCard({ match, prediction, result }: MatchCardProps) {
-  const isLocked = new Date(match.kickoff_at) <= new Date();
+  const isLocked = match.stage === "group"
+    ? GROUP_STAGE_LOCK <= new Date()
+    : new Date(match.kickoff_at) <= new Date();
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {

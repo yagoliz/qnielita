@@ -54,14 +54,7 @@ export default async function PartidosPage({ searchParams }: PageProps) {
     .select("*")
     .single();
 
-  const { data: firstGroupMatch } = await supabase
-    .from("matches")
-    .select("kickoff_at")
-    .eq("stage", "group")
-    .gt("kickoff_at", new Date().toISOString())
-    .order("kickoff_at", { ascending: true })
-    .limit(1)
-    .single();
+  const GROUP_STAGE_LOCK = "2026-06-11T18:00:00Z";
 
   const now = new Date();
   let bracketStatus: BracketStatus = "not_open";
@@ -139,8 +132,8 @@ export default async function PartidosPage({ searchParams }: PageProps) {
   const showGroupTree = activeTab === "grupos" && tabTree.groupStage.groups.length > 0;
 
   const partidosDeadlines: { label: string; targetDate: string }[] = [];
-  if (activeTab === "grupos" && firstGroupMatch) {
-    partidosDeadlines.push({ label: "Cierre fase de grupos", targetDate: firstGroupMatch.kickoff_at });
+  if (activeTab === "grupos" && new Date(GROUP_STAGE_LOCK) > now) {
+    partidosDeadlines.push({ label: "Cierre fase de grupos", targetDate: GROUP_STAGE_LOCK });
   }
   if (activeTab === "eliminatorias" && bracketConfig && new Date(bracketConfig.lock_at) > now) {
     partidosDeadlines.push({ label: "Cierre bracket eliminatorias", targetDate: bracketConfig.lock_at });

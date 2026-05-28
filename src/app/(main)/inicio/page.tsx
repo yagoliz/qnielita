@@ -62,14 +62,7 @@ export default async function InicioPage() {
     .select("unlock_at, lock_at")
     .single();
 
-  const { data: firstGroupMatch } = await supabase
-    .from("matches")
-    .select("kickoff_at")
-    .eq("stage", "group")
-    .gt("kickoff_at", new Date().toISOString())
-    .order("kickoff_at", { ascending: true })
-    .limit(1)
-    .single();
+  const GROUP_STAGE_LOCK = "2026-06-11T18:00:00Z";
 
   const { data: earliestTournamentLock } = await supabase
     .from("tournament_bet_config")
@@ -80,8 +73,8 @@ export default async function InicioPage() {
     .single();
 
   const deadlines: { label: string; targetDate: string }[] = [];
-  if (firstGroupMatch) {
-    deadlines.push({ label: "Cierre fase de grupos", targetDate: firstGroupMatch.kickoff_at });
+  if (new Date(GROUP_STAGE_LOCK) > new Date()) {
+    deadlines.push({ label: "Cierre fase de grupos", targetDate: GROUP_STAGE_LOCK });
   }
   if (earliestTournamentLock) {
     deadlines.push({ label: "Cierre apuestas torneo", targetDate: earliestTournamentLock.lock_at });

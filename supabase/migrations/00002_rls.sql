@@ -78,19 +78,27 @@ CREATE POLICY "Tournament bet config: admin can update"
 CREATE POLICY "Match predictions: users can read own"
   ON match_predictions FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Match predictions: users can insert own before kickoff"
+CREATE POLICY "Match predictions: users can insert own before lock"
   ON match_predictions FOR INSERT WITH CHECK (
     auth.uid() = user_id
     AND EXISTS (
-      SELECT 1 FROM matches WHERE id = match_id AND kickoff_at > now()
+      SELECT 1 FROM matches WHERE id = match_id
+        AND CASE
+          WHEN stage = 'group' THEN '2026-06-11T18:00:00+00'::timestamptz > now()
+          ELSE kickoff_at > now()
+        END
     )
   );
 
-CREATE POLICY "Match predictions: users can update own before kickoff"
+CREATE POLICY "Match predictions: users can update own before lock"
   ON match_predictions FOR UPDATE USING (
     auth.uid() = user_id
     AND EXISTS (
-      SELECT 1 FROM matches WHERE id = match_id AND kickoff_at > now()
+      SELECT 1 FROM matches WHERE id = match_id
+        AND CASE
+          WHEN stage = 'group' THEN '2026-06-11T18:00:00+00'::timestamptz > now()
+          ELSE kickoff_at > now()
+        END
     )
   );
 
