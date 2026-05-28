@@ -92,6 +92,23 @@ export async function register(formData: FormData) {
   redirect("/inicio");
 }
 
+export async function changePassword(formData: FormData) {
+  const newPassword = formData.get("new_password") as string;
+
+  if (!newPassword || newPassword.length < 6) {
+    return { error: "La contraseña debe tener al menos 6 caracteres." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { success: true };
+}
+
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();

@@ -500,6 +500,22 @@ export async function updateUserProfile(
   return { success: true };
 }
 
+export async function adminChangePassword(userId: string, newPassword: string) {
+  await requireAdmin();
+
+  if (!newPassword || newPassword.length < 6) {
+    return { error: "La contraseña debe tener al menos 6 caracteres." };
+  }
+
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.auth.admin.updateUserById(userId, {
+    password: newPassword,
+  });
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
 export async function removeUser(userId: string) {
   const { user } = await requireAdmin();
 

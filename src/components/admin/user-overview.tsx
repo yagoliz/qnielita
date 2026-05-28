@@ -5,6 +5,7 @@ import {
   toggleUserAdmin,
   updateUserProfile,
   removeUser,
+  adminChangePassword,
 } from "@/actions/admin";
 
 export type UserWithStats = {
@@ -163,8 +164,10 @@ function EditUserCard({
 }) {
   const [displayName, setDisplayName] = useState(user.display_name);
   const [avatarEmoji, setAvatarEmoji] = useState(user.avatar_emoji);
+  const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passwordMsg, setPasswordMsg] = useState<string | null>(null);
 
   async function handleSave() {
     setLoading(true);
@@ -179,6 +182,24 @@ function EditUserCard({
     } else {
       onSaved();
     }
+  }
+
+  async function handleChangePassword() {
+    if (!newPassword || newPassword.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setPasswordMsg(null);
+    const result = await adminChangePassword(user.id, newPassword);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setNewPassword("");
+      setPasswordMsg("Contraseña actualizada");
+    }
+    setLoading(false);
   }
 
   return (
@@ -201,6 +222,29 @@ function EditUserCard({
             onChange={(e) => setAvatarEmoji(e.target.value)}
             className="w-full border border-gray-200 rounded px-2 py-1 text-sm"
           />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500">Nueva contraseña</label>
+          <div className="flex gap-1">
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Mín. 6 caracteres"
+              minLength={6}
+              className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm"
+            />
+            <button
+              onClick={handleChangePassword}
+              disabled={loading || !newPassword}
+              className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded disabled:opacity-50"
+            >
+              Cambiar
+            </button>
+          </div>
+          {passwordMsg && (
+            <p className="text-xs text-green-600 mt-0.5">{passwordMsg}</p>
+          )}
         </div>
       </div>
 
