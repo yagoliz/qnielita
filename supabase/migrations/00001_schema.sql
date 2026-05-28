@@ -6,11 +6,13 @@ CREATE TYPE match_stage AS ENUM (
   'group', 'R32', 'R16', 'QF', 'SF', 'third_place', 'final'
 );
 
-CREATE TYPE bet_type AS ENUM ('yes_no', 'multiple_choice', 'open_text');
+CREATE TYPE bet_type AS ENUM ('yes_no', 'multiple_choice', 'open_text', 'team', 'player');
 
 CREATE TYPE tournament_bet_category AS ENUM (
   'champion', 'top_scorer', 'golden_ball', 'surprise_team', 'most_goals_group_stage'
 );
+
+CREATE TYPE answer_type AS ENUM ('team', 'player', 'text');
 
 -- Profiles (extends auth.users)
 CREATE TABLE profiles (
@@ -55,6 +57,16 @@ CREATE TABLE teams (
   group_id INTEGER NOT NULL REFERENCES groups(id)
 );
 
+-- Players
+CREATE TABLE players (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  team_id INTEGER NOT NULL REFERENCES teams(id),
+  position TEXT
+);
+
+CREATE INDEX idx_players_team ON players(team_id);
+
 -- Matches
 CREATE TABLE matches (
   id SERIAL PRIMARY KEY,
@@ -97,10 +109,13 @@ CREATE INDEX idx_match_predictions_match ON match_predictions(match_id);
 -- Tournament Bet Config
 CREATE TABLE tournament_bet_config (
   category tournament_bet_category PRIMARY KEY,
-  label TEXT NOT NULL,           -- Spanish display name
+  label TEXT NOT NULL,
+  answer_type answer_type NOT NULL DEFAULT 'text',
   points_value INTEGER NOT NULL,
   lock_at TIMESTAMPTZ NOT NULL,
-  correct_answer TEXT            -- filled after tournament
+  correct_answer_text TEXT,
+  correct_answer_team_id INTEGER REFERENCES teams(id),
+  correct_answer_player_id UUID REFERENCES players(id)
 );
 
 -- Tournament Bets
@@ -108,7 +123,9 @@ CREATE TABLE tournament_bets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   category tournament_bet_category NOT NULL REFERENCES tournament_bet_config(category),
-  answer TEXT NOT NULL,
+  answer_text TEXT,
+  answer_team_id INTEGER REFERENCES teams(id),
+  answer_player_id UUID REFERENCES players(id),
   points_earned INTEGER,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id, category)
@@ -122,7 +139,9 @@ CREATE TABLE custom_bets (
   options JSONB,                 -- for multiple_choice: ["option1", "option2", ...]
   points_value INTEGER NOT NULL DEFAULT 3,
   lock_at TIMESTAMPTZ NOT NULL,
-  correct_answer TEXT,           -- filled when resolved
+  correct_answer_text TEXT,
+  correct_answer_team_id INTEGER REFERENCES teams(id),
+  correct_answer_player_id UUID REFERENCES players(id),
   created_by UUID NOT NULL REFERENCES profiles(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -132,7 +151,9 @@ CREATE TABLE custom_bet_answers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   custom_bet_id UUID NOT NULL REFERENCES custom_bets(id) ON DELETE CASCADE,
-  answer TEXT NOT NULL,
+  answer_text TEXT,
+  answer_team_id INTEGER REFERENCES teams(id),
+  answer_player_id UUID REFERENCES players(id),
   points_earned INTEGER,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id, custom_bet_id)

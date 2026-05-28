@@ -12,6 +12,7 @@ ALTER TABLE tournament_bets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE custom_bets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE custom_bet_answers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leaderboard ENABLE ROW LEVEL SECURITY;
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bracket_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bracket_predictions ENABLE ROW LEVEL SECURITY;
 
@@ -48,6 +49,9 @@ CREATE POLICY "Groups: anyone can read"
 
 CREATE POLICY "Teams: anyone can read"
   ON teams FOR SELECT USING (true);
+
+CREATE POLICY "Players: anyone can read"
+  ON players FOR SELECT USING (true);
 
 CREATE POLICY "Matches: anyone can read"
   ON matches FOR SELECT USING (true);
@@ -163,7 +167,10 @@ CREATE POLICY "Custom bet answers: anyone can read after resolution"
   ON custom_bet_answers FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM custom_bets
-      WHERE id = custom_bet_id AND correct_answer IS NOT NULL
+      WHERE id = custom_bet_id
+        AND (correct_answer_text IS NOT NULL
+          OR correct_answer_team_id IS NOT NULL
+          OR correct_answer_player_id IS NOT NULL)
     )
   );
 

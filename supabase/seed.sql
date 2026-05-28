@@ -99,12 +99,12 @@ INSERT INTO teams (name, code, group_id) VALUES
 
 -- Tournament bet config
 -- Lock date = opening kickoff (June 11, 2026 19:00 UTC)
-INSERT INTO tournament_bet_config (category, label, points_value, lock_at) VALUES
-  ('champion', 'Campeón', 10, '2026-06-11T19:00:00Z'),
-  ('top_scorer', 'Máximo Goleador', 7, '2026-06-11T19:00:00Z'),
-  ('golden_ball', 'Balón de Oro', 7, '2026-06-11T19:00:00Z'),
-  ('surprise_team', 'Selección Revelación', 5, '2026-06-11T19:00:00Z'),
-  ('most_goals_group_stage', 'Más Goles en Fase de Grupos', 5, '2026-06-11T19:00:00Z');
+INSERT INTO tournament_bet_config (category, label, answer_type, points_value, lock_at) VALUES
+  ('champion', 'Campeón', 'team', 10, '2026-06-11T19:00:00Z'),
+  ('top_scorer', 'Máximo Goleador', 'player', 7, '2026-06-11T19:00:00Z'),
+  ('golden_ball', 'Balón de Oro', 'player', 7, '2026-06-11T19:00:00Z'),
+  ('surprise_team', 'Selección Revelación', 'team', 5, '2026-06-11T19:00:00Z'),
+  ('most_goals_group_stage', 'Más Goles en Fase de Grupos', 'team', 5, '2026-06-11T19:00:00Z');
 
 -- Matches (104 matches)
 -- Official FIFA World Cup 2026 schedule. All kickoff_at values are UTC.

@@ -44,13 +44,20 @@ RETURNS VOID AS $$
 BEGIN
   UPDATE tournament_bets tb
   SET points_earned = CASE
-    WHEN lower(trim(tb.answer)) = lower(trim(tbc.correct_answer)) THEN tbc.points_value
+    WHEN tbc.answer_type = 'team' AND tb.answer_team_id IS NOT NULL
+      AND tb.answer_team_id = tbc.correct_answer_team_id THEN tbc.points_value
+    WHEN tbc.answer_type = 'player' AND tb.answer_player_id IS NOT NULL
+      AND tb.answer_player_id = tbc.correct_answer_player_id THEN tbc.points_value
+    WHEN tbc.answer_type = 'text' AND tb.answer_text IS NOT NULL
+      AND lower(trim(tb.answer_text)) = lower(trim(tbc.correct_answer_text)) THEN tbc.points_value
     ELSE 0
   END
   FROM tournament_bet_config tbc
   WHERE tbc.category = p_category
     AND tb.category = p_category
-    AND tbc.correct_answer IS NOT NULL;
+    AND (tbc.correct_answer_text IS NOT NULL
+      OR tbc.correct_answer_team_id IS NOT NULL
+      OR tbc.correct_answer_player_id IS NOT NULL);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -60,13 +67,20 @@ RETURNS VOID AS $$
 BEGIN
   UPDATE custom_bet_answers cba
   SET points_earned = CASE
-    WHEN lower(trim(cba.answer)) = lower(trim(cb.correct_answer)) THEN cb.points_value
+    WHEN cb.bet_type IN ('team') AND cba.answer_team_id IS NOT NULL
+      AND cba.answer_team_id = cb.correct_answer_team_id THEN cb.points_value
+    WHEN cb.bet_type IN ('player') AND cba.answer_player_id IS NOT NULL
+      AND cba.answer_player_id = cb.correct_answer_player_id THEN cb.points_value
+    WHEN cb.bet_type IN ('yes_no', 'multiple_choice', 'open_text') AND cba.answer_text IS NOT NULL
+      AND lower(trim(cba.answer_text)) = lower(trim(cb.correct_answer_text)) THEN cb.points_value
     ELSE 0
   END
   FROM custom_bets cb
   WHERE cb.id = p_bet_id
     AND cba.custom_bet_id = p_bet_id
-    AND cb.correct_answer IS NOT NULL;
+    AND (cb.correct_answer_text IS NOT NULL
+      OR cb.correct_answer_team_id IS NOT NULL
+      OR cb.correct_answer_player_id IS NOT NULL);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
