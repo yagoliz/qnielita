@@ -14,19 +14,23 @@ export default function LoginPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-center mb-2 flex items-center justify-center gap-2">Qnielita <Trophy className="size-6 text-green-600" /></h1>
+      <h1 className="text-2xl font-bold text-center mb-2 flex items-center justify-center gap-2">
+        Qnielita <Trophy className="size-6 text-green-600" />
+      </h1>
       <p className="text-gray-500 text-center mb-6">Porra Mundial 2026</p>
 
       <form action={formAction} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-1">
-            Email
+          <label htmlFor="username" className="block text-sm font-medium mb-1">
+            Usuario
           </label>
           <input
-            id="email"
-            name="email"
-            type="email"
+            id="username"
+            name="username"
+            type="text"
             required
+            autoCapitalize="none"
+            autoCorrect="off"
             className="w-full rounded-lg border border-gray-300 px-3 py-2"
           />
         </div>

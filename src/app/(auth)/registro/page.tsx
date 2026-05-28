@@ -19,7 +19,9 @@ function RegisterForm() {
   if (!token) {
     return (
       <div className="text-center">
-        <h1 className="text-2xl font-bold mb-2">Qnielita <Trophy className="size-6 text-green-600 inline" /></h1>
+        <h1 className="text-2xl font-bold mb-2">
+          Qnielita <Trophy className="size-6 text-green-600 inline" />
+        </h1>
         <p className="text-gray-500">
           Necesitas un enlace de invitación para registrarte.
         </p>
@@ -29,11 +31,38 @@ function RegisterForm() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-center mb-2">Qnielita <Trophy className="size-6 text-green-600 inline" /></h1>
+      <h1 className="text-2xl font-bold text-center mb-2">
+        Qnielita <Trophy className="size-6 text-green-600 inline" />
+      </h1>
       <p className="text-gray-500 text-center mb-6">Crea tu cuenta</p>
 
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="token" value={token} />
+
+        <div>
+          <label
+            htmlFor="username"
+            className="block text-sm font-medium mb-1"
+          >
+            Usuario
+          </label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            required
+            minLength={3}
+            maxLength={20}
+            pattern="[a-z0-9_]{3,20}"
+            autoCapitalize="none"
+            autoCorrect="off"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2"
+            placeholder="nombre_de_usuario"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Letras, números y guiones bajos (3-20 caracteres)
+          </p>
+        </div>
 
         <div>
           <label
@@ -46,19 +75,6 @@ function RegisterForm() {
             id="display_name"
             name="display_name"
             type="text"
-            required
-            className="w-full rounded-lg border border-gray-300 px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
             required
             className="w-full rounded-lg border border-gray-300 px-3 py-2"
           />
