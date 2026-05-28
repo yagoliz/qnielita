@@ -1,6 +1,7 @@
 -- Enable RLS on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invite_claims ENABLE ROW LEVEL SECURITY;
 ALTER TABLE groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
@@ -11,6 +12,8 @@ ALTER TABLE tournament_bets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE custom_bets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE custom_bet_answers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leaderboard ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bracket_config ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bracket_predictions ENABLE ROW LEVEL SECURITY;
 
 -- Helper: check if current user is admin
 CREATE OR REPLACE FUNCTION is_admin()
@@ -35,6 +38,10 @@ CREATE POLICY "Invites: admin can create"
 CREATE POLICY "Invites: anyone can read unused invites by token"
   ON invites FOR SELECT USING (true);
 
+-- INVITE CLAIMS
+CREATE POLICY "invite_claims: admin can read"
+  ON invite_claims FOR SELECT USING (is_admin());
+
 -- GROUPS / TEAMS / MATCHES / MATCH_RESULTS / TOURNAMENT_BET_CONFIG — public read
 CREATE POLICY "Groups: anyone can read"
   ON groups FOR SELECT USING (true);
@@ -44,6 +51,9 @@ CREATE POLICY "Teams: anyone can read"
 
 CREATE POLICY "Matches: anyone can read"
   ON matches FOR SELECT USING (true);
+
+CREATE POLICY "Matches: admin can update"
+  ON matches FOR UPDATE USING (is_admin());
 
 CREATE POLICY "Match results: anyone can read"
   ON match_results FOR SELECT USING (true);
@@ -80,7 +90,6 @@ CREATE POLICY "Match predictions: users can update own before kickoff"
     )
   );
 
--- Allow reading other users' predictions for matches that have results (post-match reveal)
 CREATE POLICY "Match predictions: anyone can read after result"
   ON match_predictions FOR SELECT USING (
     EXISTS (
@@ -110,7 +119,6 @@ CREATE POLICY "Tournament bets: users can update own before lock"
     )
   );
 
--- Allow reading other users' tournament bets after lock
 CREATE POLICY "Tournament bets: anyone can read after lock"
   ON tournament_bets FOR SELECT USING (
     EXISTS (
@@ -151,7 +159,6 @@ CREATE POLICY "Custom bet answers: users can update own before lock"
     )
   );
 
--- Allow reading other users' custom bet answers after resolution
 CREATE POLICY "Custom bet answers: anyone can read after resolution"
   ON custom_bet_answers FOR SELECT USING (
     EXISTS (
@@ -163,3 +170,30 @@ CREATE POLICY "Custom bet answers: anyone can read after resolution"
 -- LEADERBOARD
 CREATE POLICY "Leaderboard: anyone can read"
   ON leaderboard FOR SELECT USING (true);
+
+-- BRACKET
+CREATE POLICY "Bracket config: anyone can read"
+  ON bracket_config FOR SELECT USING (true);
+
+CREATE POLICY "Bracket config: admin can update"
+  ON bracket_config FOR UPDATE USING (is_admin());
+
+CREATE POLICY "Bracket predictions: users can read own"
+  ON bracket_predictions FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Bracket predictions: users can insert in window"
+  ON bracket_predictions FOR INSERT WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (SELECT 1 FROM bracket_config WHERE unlock_at <= now() AND lock_at > now())
+  );
+
+CREATE POLICY "Bracket predictions: users can update in window"
+  ON bracket_predictions FOR UPDATE USING (
+    auth.uid() = user_id
+    AND EXISTS (SELECT 1 FROM bracket_config WHERE unlock_at <= now() AND lock_at > now())
+  );
+
+CREATE POLICY "Bracket predictions: anyone can read after lock"
+  ON bracket_predictions FOR SELECT USING (
+    EXISTS (SELECT 1 FROM bracket_config WHERE lock_at <= now())
+  );
