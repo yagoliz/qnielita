@@ -2,7 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockGetUser = vi.fn();
 const mockFrom = vi.fn();
-const mockAuth = { getUser: mockGetUser };
+const mockSignInWithPassword = vi.fn();
+const mockSignOut = vi.fn();
+const mockAuth = {
+  getUser: mockGetUser,
+  signInWithPassword: mockSignInWithPassword,
+  signOut: mockSignOut,
+};
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(() =>
@@ -14,16 +20,21 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 const mockDeleteUser = vi.fn(() => Promise.resolve({ error: null }));
+const mockCreateUser = vi.fn();
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: vi.fn(() => ({
     from: mockFrom,
-    auth: { admin: { deleteUser: mockDeleteUser } },
+    auth: { admin: { deleteUser: mockDeleteUser, createUser: mockCreateUser } },
   })),
 }));
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  redirect: vi.fn(),
 }));
 
 function setupAdmin(userId = "admin-id") {
@@ -274,6 +285,170 @@ describe("updateUserProfile", () => {
     expect(mockUpdate).toHaveBeenCalledWith({
       display_name: "Nuevo Nombre",
       avatar_emoji: "🏆",
+    });
+  });
+});
+
+describe("register", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  function makeFormData(fields: Record<string, string>): FormData {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+    return fd;
+  }
+
+  it("rejects invalid username format", async () => {
+    const { register } = await import("@/actions/auth");
+    const result = await register(
+      makeFormData({ token: "abc", username: "no spaces", display_name: "Test", password: "123456" })
+    );
+    expect(result).toEqual({
+      error: "El nombre de usuario solo puede contener letras, números y guiones bajos (3-20 caracteres)",
+    });
+  });
+
+  it("rejects invalid token", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "invites") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn(() =>
+                Promise.resolve({ data: null, error: { message: "not found" } })
+              ),
+            })),
+          })),
+        };
+      }
+      return {};
+    });
+
+    const { register } = await import("@/actions/auth");
+    const result = await register(
+      makeFormData({ token: "bad-token", username: "juan", display_name: "Juan", password: "123456" })
+    );
+    expect(result).toEqual({ error: "Enlace de invitación no válido" });
+  });
+
+  it("rejects when invite is full", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "invites") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn(() =>
+                Promise.resolve({ data: { id: "inv-1", max_claims: 2 }, error: null })
+              ),
+            })),
+          })),
+        };
+      }
+      if (table === "invite_claims") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() =>
+              Promise.resolve({ count: 2, error: null })
+            ),
+          })),
+        };
+      }
+      return {};
+    });
+
+    const { register } = await import("@/actions/auth");
+    const result = await register(
+      makeFormData({ token: "full-token", username: "juan", display_name: "Juan", password: "123456" })
+    );
+    expect(result).toEqual({ error: "Este enlace de invitación ya no tiene plazas disponibles" });
+  });
+
+  it("rejects duplicate username", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "invites") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn(() =>
+                Promise.resolve({ data: { id: "inv-1", max_claims: 10 }, error: null })
+              ),
+            })),
+          })),
+        };
+      }
+      if (table === "invite_claims") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() =>
+              Promise.resolve({ count: 0, error: null })
+            ),
+          })),
+        };
+      }
+      if (table === "profiles") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn(() =>
+                Promise.resolve({ data: { id: "existing-user" }, error: null })
+              ),
+            })),
+          })),
+        };
+      }
+      return {};
+    });
+
+    const { register } = await import("@/actions/auth");
+    const result = await register(
+      makeFormData({ token: "good-token", username: "taken", display_name: "Test", password: "123456" })
+    );
+    expect(result).toEqual({ error: "Este nombre de usuario ya está en uso" });
+  });
+});
+
+describe("generateInvite", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  it("creates invite with max_claims", async () => {
+    setupAdmin("admin-id");
+    const mockInsert = vi.fn(() => ({
+      select: vi.fn(() => ({
+        single: vi.fn(() =>
+          Promise.resolve({ data: { token: "abc123" }, error: null })
+        ),
+      })),
+    }));
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "profiles") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn(() =>
+                Promise.resolve({ data: { is_admin: true }, error: null })
+              ),
+            })),
+          })),
+        };
+      }
+      if (table === "invites") {
+        return { insert: mockInsert };
+      }
+      return {};
+    });
+
+    const { generateInvite } = await import("@/actions/admin");
+    const result = await generateInvite(30);
+    expect(result).toEqual({ token: "abc123" });
+    expect(mockInsert).toHaveBeenCalledWith({
+      created_by: "admin-id",
+      max_claims: 30,
     });
   });
 });

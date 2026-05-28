@@ -413,17 +413,16 @@ export async function updateBracketConfig(formData: FormData) {
   return { success: true };
 }
 
-export async function generateInvite(emails?: string[]) {
+export async function generateInvite(maxClaims: number) {
   const { supabase, user } = await requireAdmin();
 
-  const insertData: Record<string, unknown> = { created_by: user.id };
-  if (emails && emails.length > 0) {
-    insertData.allowed_emails = emails.map((e) => e.toLowerCase().trim());
+  if (!maxClaims || maxClaims < 1) {
+    return { error: "El número de plazas debe ser al menos 1." };
   }
 
   const { data, error } = await supabase
     .from("invites")
-    .insert(insertData)
+    .insert({ created_by: user.id, max_claims: maxClaims })
     .select("token")
     .single();
 
