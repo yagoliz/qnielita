@@ -79,9 +79,6 @@ export default async function InicioPage() {
   if (earliestTournamentLock) {
     deadlines.push({ label: "Cierre apuestas torneo", targetDate: earliestTournamentLock.lock_at });
   }
-  if (bracketConfig && new Date(bracketConfig.lock_at) > new Date()) {
-    deadlines.push({ label: "Cierre bracket eliminatorias", targetDate: bracketConfig.lock_at });
-  }
 
   const { data: bracketPreds } = await supabase
     .from("bracket_predictions")
