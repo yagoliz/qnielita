@@ -12,6 +12,52 @@ type BracketPrediction = {
   penalty_winner: "home" | "away" | null;
 };
 
+export async function submitSingleBracketMatch(prediction: BracketPrediction) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "No autenticado." };
+
+  if (prediction.home_score < 0 || prediction.away_score < 0) {
+    return { error: "Los goles no pueden ser negativos." };
+  }
+  if (prediction.home_score === prediction.away_score && !prediction.penalty_winner) {
+    return { error: "Debes indicar ganador en penales si hay empate." };
+  }
+
+  const { error } = await supabase
+    .from("bracket_predictions")
+    .upsert(
+      {
+        user_id: user.id,
+        match_id: prediction.match_id,
+        predicted_home_team_id: prediction.predicted_home_team_id,
+        predicted_away_team_id: prediction.predicted_away_team_id,
+        home_score: prediction.home_score,
+        away_score: prediction.away_score,
+        penalty_winner:
+          prediction.home_score === prediction.away_score
+            ? prediction.penalty_winner
+            : null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,match_id" }
+    );
+
+  if (error) {
+    if (error.message.includes("rls") || error.code === "42501") {
+      return { error: "Las predicciones de eliminatorias no están abiertas en este momento." };
+    }
+    return { error: error.message };
+  }
+
+  revalidatePath("/partidos");
+  revalidatePath("/inicio");
+  return { success: true };
+}
+
 export async function submitBracket(predictions: BracketPrediction[]) {
   const supabase = await createClient();
   const {

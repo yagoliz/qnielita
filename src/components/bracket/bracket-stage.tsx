@@ -9,9 +9,10 @@ type Props = {
   locked: boolean;
   onScoreChange: (matchId: number, side: "home" | "away", value: number) => void;
   onPenaltyChange: (matchId: number, winner: "home" | "away") => void;
+  onSave: (matchId: number) => Promise<{ error?: string; success?: boolean }>;
 };
 
-export function BracketStage({ stage, matches, locked, onScoreChange, onPenaltyChange }: Props) {
+export function BracketStage({ stage, matches, locked, onScoreChange, onPenaltyChange, onSave }: Props) {
   return (
     <div className="mb-4">
       <h3 className="text-sm font-semibold text-green-600 mb-2">
@@ -25,6 +26,7 @@ export function BracketStage({ stage, matches, locked, onScoreChange, onPenaltyC
             locked={locked}
             onScoreChange={onScoreChange}
             onPenaltyChange={onPenaltyChange}
+            onSave={onSave}
           />
         ))}
       </div>

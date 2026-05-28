@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { submitMatchResult } from "@/actions/admin";
 import { useActionState } from "react";
+import { ScoreInput } from "@/components/score-input";
 
 export type Match = {
   id: number;
@@ -103,30 +104,24 @@ export function MatchResultRow({ match, overrideLock = false }: { match: Match; 
         </div>
 
         <div className="flex items-center gap-1">
-          <input
+          <ScoreInput
             name="home_score"
-            type="number"
-            min={0}
             value={homeScore}
             disabled={isLocked}
-            onChange={(e) => {
-              setHomeScore(e.target.value);
+            onChange={(v) => {
+              setHomeScore(String(v));
               setPenaltyWinner(null);
             }}
-            className="w-12 h-10 text-center border rounded-lg text-sm disabled:bg-gray-50"
           />
           <span className="text-gray-300 font-bold">-</span>
-          <input
+          <ScoreInput
             name="away_score"
-            type="number"
-            min={0}
             value={awayScore}
             disabled={isLocked}
-            onChange={(e) => {
-              setAwayScore(e.target.value);
+            onChange={(v) => {
+              setAwayScore(String(v));
               setPenaltyWinner(null);
             }}
-            className="w-12 h-10 text-center border rounded-lg text-sm disabled:bg-gray-50"
           />
         </div>
 

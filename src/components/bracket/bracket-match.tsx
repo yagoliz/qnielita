@@ -1,9 +1,22 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { ScoreInput } from "../score-input";
+import { KNOCKOUT_LABELS, type KnockoutStage } from "@/lib/match-tree";
+
+function formatKickoff(iso: string) {
+  return new Date(iso).toLocaleString("es-ES", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export type BracketMatchData = {
   matchId: number;
+  stage: string;
+  kickoffAt: string;
   homeTeam: { id: number; name: string; code: string } | null;
   awayTeam: { id: number; name: string; code: string } | null;
   homeScore: number | null;
@@ -19,16 +32,38 @@ type Props = {
   locked: boolean;
   onScoreChange: (matchId: number, side: "home" | "away", value: number) => void;
   onPenaltyChange: (matchId: number, winner: "home" | "away") => void;
+  onSave: (matchId: number) => Promise<{ error?: string; success?: boolean }>;
 };
 
-export function BracketMatch({ match, locked, onScoreChange, onPenaltyChange }: Props) {
+export function BracketMatch({ match, locked, onScoreChange, onPenaltyChange, onSave }: Props) {
   const isTied = match.homeScore != null && match.awayScore != null && match.homeScore === match.awayScore;
   const hasTeams = match.homeTeam && match.awayTeam;
   const totalPoints = (match.teamPointsEarned ?? 0) + (match.scorePointsEarned ?? 0);
+  const hasScores = match.homeScore != null && match.awayScore != null;
+  const canSave = hasTeams && hasScores && (!isTied || match.penaltyWinner);
+
+  const [isPending, startTransition] = useTransition();
+  const [feedback, setFeedback] = useState<{ error?: string; success?: boolean } | null>(null);
+
+  function handleSave() {
+    setFeedback(null);
+    startTransition(async () => {
+      const result = await onSave(match.matchId);
+      setFeedback(result);
+    });
+  }
 
   if (!hasTeams) {
     return (
       <div className="bg-gray-50 rounded-xl p-4 border border-dashed border-gray-200">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs font-medium text-gray-300 uppercase">
+            {KNOCKOUT_LABELS[match.stage as KnockoutStage] ?? match.stage}
+          </span>
+          <span className="text-xs text-gray-300">
+            {formatKickoff(match.kickoffAt)}
+          </span>
+        </div>
         <p className="text-xs text-gray-400 text-center">
           Completa los partidos anteriores
         </p>
@@ -38,6 +73,15 @@ export function BracketMatch({ match, locked, onScoreChange, onPenaltyChange }: 
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-xs font-medium text-gray-400 uppercase">
+          {KNOCKOUT_LABELS[match.stage as KnockoutStage] ?? match.stage}
+        </span>
+        <span className="text-xs text-gray-400">
+          {formatKickoff(match.kickoffAt)}
+        </span>
+      </div>
+
       <div className="flex items-center justify-between gap-2">
         <div className="flex-1 text-right">
           <p className="font-semibold text-sm">{match.homeTeam!.name}</p>
@@ -105,6 +149,24 @@ export function BracketMatch({ match, locked, onScoreChange, onPenaltyChange }: 
             </span>
           )}
         </div>
+      )}
+
+      {!locked && (
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isPending || !canSave}
+          className="mt-3 w-full text-sm bg-green-600 text-white rounded-lg py-2 font-medium hover:bg-green-700 disabled:opacity-50"
+        >
+          {isPending ? "Guardando..." : "Guardar"}
+        </button>
+      )}
+
+      {feedback?.error && (
+        <p className="mt-2 text-red-600 text-xs text-center">{feedback.error}</p>
+      )}
+      {feedback?.success && (
+        <p className="mt-2 text-green-600 text-xs text-center">Guardado</p>
       )}
     </div>
   );

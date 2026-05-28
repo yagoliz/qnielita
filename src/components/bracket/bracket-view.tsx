@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, useTransition } from "react";
 import { BracketStage } from "./bracket-stage";
-import { submitBracket } from "@/actions/bracket";
+import { submitBracket, submitSingleBracketMatch } from "@/actions/bracket";
 import {
   type BracketMapEntry,
   type MatchPick,
@@ -193,6 +193,29 @@ export function BracketView({
     setFeedback(null);
   }, []);
 
+  const handleSingleSave = useCallback(async (matchId: number) => {
+    const s = state.get(matchId)!;
+    const teams = resolvedTeams.get(matchId)!;
+
+    if (!teams.home || !teams.away) {
+      return { error: "Los equipos de este partido aún no están definidos." };
+    }
+    if (s.homeScore == null || s.awayScore == null) {
+      return { error: "Introduce un resultado." };
+    }
+
+    const prediction = {
+      match_id: matchId,
+      predicted_home_team_id: teams.home.id,
+      predicted_away_team_id: teams.away.id,
+      home_score: s.homeScore,
+      away_score: s.awayScore,
+      penalty_winner: s.homeScore === s.awayScore ? s.penaltyWinner : null,
+    };
+
+    return await submitSingleBracketMatch(prediction);
+  }, [state, resolvedTeams]);
+
   const handleSubmit = () => {
     const predictions = matches.map((m) => {
       const s = state.get(m.id)!;
@@ -232,6 +255,8 @@ export function BracketView({
 
       const entry: BracketMatchData = {
         matchId: m.id,
+        stage: m.stage,
+        kickoffAt: m.kickoff_at,
         homeTeam: teams.home,
         awayTeam: teams.away,
         homeScore: s.homeScore,
@@ -264,6 +289,7 @@ export function BracketView({
             locked={locked}
             onScoreChange={handleScoreChange}
             onPenaltyChange={handlePenaltyChange}
+            onSave={handleSingleSave}
           />
         );
       })}
@@ -279,8 +305,8 @@ export function BracketView({
             {isPending
               ? "Guardando..."
               : hasExisting
-                ? "Actualizar predicciones"
-                : "Guardar predicciones"}
+                ? "Actualizar todo"
+                : "Guardar todo"}
           </button>
 
           {feedback?.error && (
