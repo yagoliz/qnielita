@@ -100,17 +100,17 @@ INSERT INTO teams (name, code, group_id) VALUES
 -- Tournament bet config
 -- Lock date = opening kickoff (June 11, 2026 19:00 UTC)
 INSERT INTO tournament_bet_config (category, label, answer_type, points_value, lock_at) VALUES
-  ('champion', 'Campeón', 'team', 10, '2026-06-11T19:00:00Z'),
-  ('top_scorer', 'Máximo Goleador', 'player', 7, '2026-06-11T19:00:00Z'),
-  ('golden_ball', 'Balón de Oro', 'player', 7, '2026-06-11T19:00:00Z'),
-  ('surprise_team', 'Selección Revelación', 'team', 5, '2026-06-11T19:00:00Z'),
-  ('most_goals_group_stage', 'Más Goles en Fase de Grupos', 'team', 5, '2026-06-11T19:00:00Z');
+  ('champion', 'Campeón', 'team', 10, '2026-06-11T18:00:00Z'),
+  ('top_scorer', 'Máximo Goleador', 'player', 7, '2026-06-11T18:00:00Z'),
+  ('golden_ball', 'Balón de Oro', 'player', 7, '2026-06-11T18:00:00Z'),
+  ('surprise_team', 'Selección Revelación', 'team', 5, '2026-06-11T18:00:00Z'),
+  ('most_goals_group_stage', 'Más Goles en Fase de Grupos', 'team', 5, '2026-06-11T18:00:00Z');
 
 -- Matches (104 matches)
 -- Official FIFA World Cup 2026 schedule. All kickoff_at values are UTC.
 INSERT INTO matches (home_team_id, away_team_id, group_id, stage, kickoff_at, venue) VALUES
   -- Group stage
-  (1, 4, 1, 'group', '2026-06-11T19:00:00Z', 'Estadio Azteca, Ciudad de México'),
+  (1, 4, 1, 'group', '2026-06-11T18:00:00Z', 'Estadio Azteca, Ciudad de México'),
   (2, 3, 1, 'group', '2026-06-12T02:00:00Z', 'Estadio Akron, Guadalajara'),
   (5, 8, 2, 'group', '2026-06-12T19:00:00Z', 'BMO Field, Toronto'),
   (13, 16, 4, 'group', '2026-06-13T01:00:00Z', 'SoFi Stadium, Los Ángeles'),
