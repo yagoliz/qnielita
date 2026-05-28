@@ -27,10 +27,12 @@ eval "$(grep -E '^(NEXT_PUBLIC_SUPABASE_URL|SUPABASE_SECRET_KEY)=' "$ENV_FILE")"
 SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:?Missing NEXT_PUBLIC_SUPABASE_URL in $ENV_FILE}"
 SERVICE_KEY="${SUPABASE_SECRET_KEY:?Missing SUPABASE_SECRET_KEY in $ENV_FILE}"
 
-read -rp "Admin email: " ADMIN_EMAIL
-read -rsp "Admin password: " ADMIN_PASSWORD
+read -rp "Username: " ADMIN_USERNAME
+read -rsp "Password: " ADMIN_PASSWORD
 echo
 read -rp "Display name: " DISPLAY_NAME
+
+ADMIN_EMAIL="${ADMIN_USERNAME}@qnielita.local"
 
 # Create user via Auth Admin API
 echo "Creating user..."
@@ -43,7 +45,7 @@ RESPONSE=$(curl -s -w "\n%{http_code}" \
     \"email\": \"${ADMIN_EMAIL}\",
     \"password\": \"${ADMIN_PASSWORD}\",
     \"email_confirm\": true,
-    \"user_metadata\": { \"display_name\": \"${DISPLAY_NAME}\" }
+    \"user_metadata\": { \"display_name\": \"${DISPLAY_NAME}\", \"username\": \"${ADMIN_USERNAME}\" }
   }")
 
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
@@ -77,4 +79,4 @@ if [[ "$PATCH_CODE" -ne 204 ]]; then
   exit 1
 fi
 
-echo "Done! ${ADMIN_EMAIL} is now an admin."
+echo "Done! ${ADMIN_USERNAME} is now an admin."
