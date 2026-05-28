@@ -52,7 +52,7 @@ export default async function AdminPage() {
 
   const { data: invites } = await supabase
     .from("invites")
-    .select("id, token, used_by, allowed_emails, created_at")
+    .select("id, token, max_claims, created_at")
     .order("created_at", { ascending: false });
 
   const adminSupabase = createAdminClient();

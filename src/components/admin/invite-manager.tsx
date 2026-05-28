@@ -7,10 +7,9 @@ import { Check, CheckCircle, Clock, Copy, Trash2 } from "lucide-react";
 type Invite = {
   id: string;
   token: string;
-  used_by: string | null;
-  allowed_emails: string[] | null;
+  max_claims: number;
   created_at: string;
-  claim_count?: number;
+  claim_count: number;
 };
 
 function CopyButton({ text }: { text: string }) {
@@ -69,24 +68,15 @@ function DeleteInviteButton({ inviteId }: { inviteId: string }) {
 export function InviteManager({ invites }: { invites: Invite[] }) {
   const [newToken, setNewToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [emailsText, setEmailsText] = useState("");
+  const [maxClaims, setMaxClaims] = useState<number>(30);
   const [error, setError] = useState<string | null>(null);
-
-  function parseEmails(text: string): string[] {
-    return text
-      .split(/[\n,;]+/)
-      .map((e) => e.trim().toLowerCase())
-      .filter((e) => e.includes("@"));
-  }
 
   async function handleGenerate() {
     setLoading(true);
     setError(null);
-    const emails = parseEmails(emailsText);
-    const result = await generateInvite(emails.length > 0 ? emails : undefined);
+    const result = await generateInvite(maxClaims);
     if (result.token) {
       setNewToken(result.token);
-      setEmailsText("");
     } else if (result.error) {
       setError(result.error);
     }
@@ -99,20 +89,15 @@ export function InviteManager({ invites }: { invites: Invite[] }) {
     <div className="space-y-3">
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1">
-          Emails permitidos (opcional, uno por línea)
+          Número de plazas
         </label>
-        <textarea
-          value={emailsText}
-          onChange={(e) => setEmailsText(e.target.value)}
-          placeholder={"juan@ejemplo.com\nmaria@ejemplo.com"}
-          rows={3}
+        <input
+          type="number"
+          min={1}
+          value={maxClaims}
+          onChange={(e) => setMaxClaims(parseInt(e.target.value, 10) || 1)}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
         />
-        {emailsText && (
-          <p className="text-xs text-gray-400 mt-1">
-            {parseEmails(emailsText).length} email(s) detectados
-          </p>
-        )}
       </div>
 
       <button
@@ -143,22 +128,19 @@ export function InviteManager({ invites }: { invites: Invite[] }) {
 
       <div className="space-y-2">
         {invites.map((invite) => {
-          const isRestricted = invite.allowed_emails && invite.allowed_emails.length > 0;
-          const totalSlots = isRestricted ? invite.allowed_emails!.length : 1;
-          const usedSlots = isRestricted
-            ? (invite.claim_count ?? 0)
-            : invite.used_by
-              ? 1
-              : 0;
-          const isFull = usedSlots >= totalSlots;
+          const isFull = invite.claim_count >= invite.max_claims;
 
           return (
             <div
               key={invite.id}
-              className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-xs"
+              className={`bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-xs ${
+                isFull ? "opacity-60" : ""
+              }`}
             >
               <div className="flex items-start justify-between gap-2">
-                <p className="font-mono truncate flex-1 self-center">{invite.token}</p>
+                <p className="font-mono truncate flex-1 self-center">
+                  {invite.token}
+                </p>
                 <div className="flex items-center gap-1 shrink-0">
                   {!isFull && (
                     <CopyButton
@@ -168,17 +150,16 @@ export function InviteManager({ invites }: { invites: Invite[] }) {
                   <DeleteInviteButton inviteId={invite.id} />
                 </div>
               </div>
-              <div className="text-gray-400 mt-1 space-y-0.5">
+              <div className="text-gray-400 mt-1">
                 <p>
-                  {isFull ? <CheckCircle className="size-3.5 inline text-green-500" /> : <Clock className="size-3.5 inline text-gray-400" />}{" "}
-                  {usedSlots}/{totalSlots} utilizado(s) —{" "}
+                  {isFull ? (
+                    <CheckCircle className="size-3.5 inline text-green-500" />
+                  ) : (
+                    <Clock className="size-3.5 inline text-gray-400" />
+                  )}{" "}
+                  {invite.claim_count}/{invite.max_claims} utilizado(s) —{" "}
                   {new Date(invite.created_at).toLocaleDateString("es")}
                 </p>
-                {isRestricted && (
-                  <p className="text-gray-300 truncate">
-                    {invite.allowed_emails!.join(", ")}
-                  </p>
-                )}
               </div>
             </div>
           );
