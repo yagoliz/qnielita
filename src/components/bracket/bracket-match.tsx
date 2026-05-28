@@ -28,7 +28,7 @@ export function BracketMatch({ match, locked, onScoreChange, onPenaltyChange }: 
 
   if (!hasTeams) {
     return (
-      <div className="bg-gray-50 rounded-lg p-3 border border-dashed border-gray-200">
+      <div className="bg-gray-50 rounded-xl p-4 border border-dashed border-gray-200">
         <p className="text-xs text-gray-400 text-center">
           Completa los partidos anteriores
         </p>
@@ -37,7 +37,7 @@ export function BracketMatch({ match, locked, onScoreChange, onPenaltyChange }: 
   }
 
   return (
-    <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between gap-2">
         <div className="flex-1 text-right">
           <p className="font-semibold text-sm">{match.homeTeam!.name}</p>

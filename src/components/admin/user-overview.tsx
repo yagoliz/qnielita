@@ -81,7 +81,7 @@ function UserCard({ user, isSelf }: { user: UserWithStats; isSelf: boolean }) {
   });
 
   return (
-    <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">{user.avatar_emoji}</span>
         <span className="text-sm font-medium">{user.display_name}</span>
@@ -182,7 +182,7 @@ function EditUserCard({
   }
 
   return (
-    <div className="bg-white rounded-lg p-3 shadow-sm border border-green-200">
+    <div className="bg-white rounded-xl p-4 shadow-sm border border-green-200">
       <div className="space-y-2 mb-3">
         <div>
           <label className="text-xs text-gray-500">Nombre</label>

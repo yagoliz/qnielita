@@ -155,7 +155,7 @@ export function InviteManager({ invites }: { invites: Invite[] }) {
           return (
             <div
               key={invite.id}
-              className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 text-xs"
+              className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-xs"
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="font-mono truncate flex-1 self-center">{invite.token}</p>

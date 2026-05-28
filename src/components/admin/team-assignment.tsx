@@ -47,7 +47,7 @@ function AutoFillButton() {
   );
 
   return (
-    <form action={formAction} className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+    <form action={formAction} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between gap-2">
         <div className="text-xs text-gray-600">
           Asigna automáticamente 1º y 2º de cada grupo desde los resultados.
@@ -104,7 +104,7 @@ function TeamAssignmentRow({
   const awayPlaceholder = isPlaceholder(match.away_team);
 
   return (
-    <form action={formAction} className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+    <form action={formAction} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
       <input type="hidden" name="match_id" value={match.id} />
 
       <div className="text-xs text-gray-400 mb-2">

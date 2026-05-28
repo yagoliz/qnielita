@@ -18,6 +18,25 @@ export type Match = {
   } | null;
 };
 
+function formatKickoff(iso: string) {
+  return new Date(iso).toLocaleString("es-ES", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+const STAGE_LABELS: Record<string, string> = {
+  group: "Grupos",
+  R32: "Dieciseisavos",
+  R16: "Octavos",
+  QF: "Cuartos",
+  SF: "Semifinal",
+  third_place: "3er puesto",
+  final: "Final",
+};
+
 export function MatchResultRow({ match, overrideLock = false }: { match: Match; overrideLock?: boolean }) {
   const [homeScore, setHomeScore] = useState<string>(
     match.result?.home_score?.toString() ?? ""
@@ -51,7 +70,7 @@ export function MatchResultRow({ match, overrideLock = false }: { match: Match; 
   return (
     <form
       action={formAction}
-      className={`bg-white rounded-lg p-3 shadow-sm border border-gray-100 ${
+      className={`bg-white rounded-xl p-4 shadow-sm border border-gray-100 ${
         isLocked ? "opacity-50" : ""
       }`}
     >
@@ -61,17 +80,28 @@ export function MatchResultRow({ match, overrideLock = false }: { match: Match; 
         <input type="hidden" name="penalty_winner" value={penaltyWinner} />
       )}
 
-      <div className="flex items-center justify-between gap-2 text-sm">
-        <div>
-          <span className="font-medium">
-            {match.home_team.code} vs {match.away_team.code}
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-400 uppercase">
+            {STAGE_LABELS[match.stage] ?? match.stage}
           </span>
           {match.group_name && (
-            <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+            <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
               Grupo {match.group_name}
             </span>
           )}
         </div>
+        <span className="text-xs text-gray-400">
+          {formatKickoff(match.kickoff_at)}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 text-right">
+          <p className="font-semibold text-sm">{match.home_team.name}</p>
+          <p className="text-xs text-gray-400">{match.home_team.code}</p>
+        </div>
+
         <div className="flex items-center gap-1">
           <input
             name="home_score"
@@ -83,9 +113,9 @@ export function MatchResultRow({ match, overrideLock = false }: { match: Match; 
               setHomeScore(e.target.value);
               setPenaltyWinner(null);
             }}
-            className="w-12 h-8 text-center border rounded text-sm disabled:bg-gray-50"
+            className="w-12 h-10 text-center border rounded-lg text-sm disabled:bg-gray-50"
           />
-          <span>-</span>
+          <span className="text-gray-300 font-bold">-</span>
           <input
             name="away_score"
             type="number"
@@ -96,17 +126,13 @@ export function MatchResultRow({ match, overrideLock = false }: { match: Match; 
               setAwayScore(e.target.value);
               setPenaltyWinner(null);
             }}
-            className="w-12 h-8 text-center border rounded text-sm disabled:bg-gray-50"
+            className="w-12 h-10 text-center border rounded-lg text-sm disabled:bg-gray-50"
           />
-          {!isLocked && (
-            <button
-              type="submit"
-              disabled={pending || (showPenaltyPicker && !penaltyWinner)}
-              className="ml-2 px-3 py-1 bg-green-600 text-white text-xs rounded font-medium disabled:opacity-50"
-            >
-              {match.result ? "Actualizar" : "Guardar"}
-            </button>
-          )}
+        </div>
+
+        <div className="flex-1">
+          <p className="font-semibold text-sm">{match.away_team.name}</p>
+          <p className="text-xs text-gray-400">{match.away_team.code}</p>
         </div>
       </div>
 
@@ -144,11 +170,21 @@ export function MatchResultRow({ match, overrideLock = false }: { match: Match; 
         </div>
       )}
 
+      {!isLocked && (
+        <button
+          type="submit"
+          disabled={pending || (showPenaltyPicker && !penaltyWinner)}
+          className="mt-3 w-full text-sm bg-green-600 text-white rounded-lg py-2 font-medium hover:bg-green-700 disabled:opacity-50"
+        >
+          {pending ? "Guardando..." : match.result ? "Actualizar" : "Guardar"}
+        </button>
+      )}
+
       {state?.error && (
-        <p className="text-red-600 text-xs mt-1">{state.error}</p>
+        <p className="mt-2 text-red-600 text-xs text-center">{state.error}</p>
       )}
       {state?.success && (
-        <p className="text-green-600 text-xs mt-1">Resultado guardado.</p>
+        <p className="mt-2 text-green-600 text-xs text-center">Resultado guardado.</p>
       )}
     </form>
   );
