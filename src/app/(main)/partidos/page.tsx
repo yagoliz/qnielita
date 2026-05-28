@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { DeadlineBanner } from "@/components/deadline-banner";
 import { redirect } from "next/navigation";
 import { Lock } from "lucide-react";
 import { PartidosTree } from "@/components/partidos-tree";
@@ -51,6 +52,15 @@ export default async function PartidosPage({ searchParams }: PageProps) {
   const { data: bracketConfig } = await supabase
     .from("bracket_config")
     .select("*")
+    .single();
+
+  const { data: firstGroupMatch } = await supabase
+    .from("matches")
+    .select("kickoff_at")
+    .eq("stage", "group")
+    .gt("kickoff_at", new Date().toISOString())
+    .order("kickoff_at", { ascending: true })
+    .limit(1)
     .single();
 
   const now = new Date();
@@ -128,9 +138,23 @@ export default async function PartidosPage({ searchParams }: PageProps) {
 
   const showGroupTree = activeTab === "grupos" && tabTree.groupStage.groups.length > 0;
 
+  const partidosDeadlines: { label: string; targetDate: string }[] = [];
+  if (activeTab === "grupos" && firstGroupMatch) {
+    partidosDeadlines.push({ label: "Cierre fase de grupos", targetDate: firstGroupMatch.kickoff_at });
+  }
+  if (activeTab === "eliminatorias" && bracketConfig && new Date(bracketConfig.lock_at) > now) {
+    partidosDeadlines.push({ label: "Cierre bracket eliminatorias", targetDate: bracketConfig.lock_at });
+  }
+
   return (
     <div>
       <h1 className="text-xl font-bold mb-4">Partidos</h1>
+
+      {partidosDeadlines.length > 0 && (
+        <div className="mb-4">
+          <DeadlineBanner deadlines={partidosDeadlines} />
+        </div>
+      )}
 
       <PartidosTabs
         activeTab={activeTab}

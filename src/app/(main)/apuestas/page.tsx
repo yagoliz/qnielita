@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { DeadlineBanner } from "@/components/deadline-banner";
 import { redirect } from "next/navigation";
 import { TournamentBetCard } from "@/components/tournament-bet-card";
 import { CustomBetCard } from "@/components/custom-bet-card";
@@ -118,10 +119,41 @@ async function LocasTab() {
   );
 }
 
-export default function ApuestasPage() {
+export default async function ApuestasPage() {
+  const supabase = await createClient();
+
+  const { data: earliestTournamentLock } = await supabase
+    .from("tournament_bet_config")
+    .select("lock_at")
+    .gt("lock_at", new Date().toISOString())
+    .order("lock_at", { ascending: true })
+    .limit(1)
+    .single();
+
+  const { data: earliestCustomLock } = await supabase
+    .from("custom_bets")
+    .select("lock_at")
+    .gt("lock_at", new Date().toISOString())
+    .order("lock_at", { ascending: true })
+    .limit(1)
+    .single();
+
+  const apuestasDeadlines: { label: string; targetDate: string }[] = [];
+  if (earliestTournamentLock) {
+    apuestasDeadlines.push({ label: "Cierre apuestas torneo", targetDate: earliestTournamentLock.lock_at });
+  }
+  if (earliestCustomLock) {
+    apuestasDeadlines.push({ label: "Cierre apuestas locas", targetDate: earliestCustomLock.lock_at });
+  }
+
   return (
     <div>
       <h1 className="text-xl font-bold mb-4">Apuestas</h1>
+      {apuestasDeadlines.length > 0 && (
+        <div className="mb-4">
+          <DeadlineBanner deadlines={apuestasDeadlines} />
+        </div>
+      )}
       <ApuestasTabs
         torneoContent={<TorneoTab />}
         locasContent={<LocasTab />}

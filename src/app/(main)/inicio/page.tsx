@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { DeadlineBanner } from "@/components/deadline-banner";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { MatchPreviewCard } from "@/components/match-preview-card";
 import { fetchFullLeaderboard } from "@/lib/leaderboard";
@@ -32,6 +33,7 @@ export default async function InicioPage() {
   const { data: allFutureMatches } = await supabase
     .from("matches")
     .select("id")
+    .eq("stage", "group")
     .gt("kickoff_at", new Date().toISOString());
 
   const { data: myPredictions } = await supabase
@@ -59,6 +61,34 @@ export default async function InicioPage() {
     .from("bracket_config")
     .select("unlock_at, lock_at")
     .single();
+
+  const { data: firstGroupMatch } = await supabase
+    .from("matches")
+    .select("kickoff_at")
+    .eq("stage", "group")
+    .gt("kickoff_at", new Date().toISOString())
+    .order("kickoff_at", { ascending: true })
+    .limit(1)
+    .single();
+
+  const { data: earliestTournamentLock } = await supabase
+    .from("tournament_bet_config")
+    .select("lock_at")
+    .gt("lock_at", new Date().toISOString())
+    .order("lock_at", { ascending: true })
+    .limit(1)
+    .single();
+
+  const deadlines: { label: string; targetDate: string }[] = [];
+  if (firstGroupMatch) {
+    deadlines.push({ label: "Cierre fase de grupos", targetDate: firstGroupMatch.kickoff_at });
+  }
+  if (earliestTournamentLock) {
+    deadlines.push({ label: "Cierre apuestas torneo", targetDate: earliestTournamentLock.lock_at });
+  }
+  if (bracketConfig && new Date(bracketConfig.lock_at) > new Date()) {
+    deadlines.push({ label: "Cierre bracket eliminatorias", targetDate: bracketConfig.lock_at });
+  }
 
   const { data: bracketPreds } = await supabase
     .from("bracket_predictions")
@@ -89,6 +119,8 @@ export default async function InicioPage() {
         <h1 className="text-xl font-bold flex items-center gap-1.5">Qnielita <Trophy className="size-5 text-green-600" /></h1>
         <p className="text-sm text-gray-500">Porra Mundial 2026</p>
       </div>
+
+      {deadlines.length > 0 && <DeadlineBanner deadlines={deadlines} />}
 
       {myRank && (
         <div className="bg-green-50 rounded-xl p-4 border border-green-100">
