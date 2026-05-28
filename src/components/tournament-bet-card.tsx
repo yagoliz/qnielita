@@ -1,25 +1,62 @@
 "use client";
 
 import { Countdown } from "./countdown";
+import { SearchCombobox, type ComboboxItem } from "./search-combobox";
 import { submitTournamentBet } from "@/actions/bets";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 type TournamentBetCardProps = {
   config: {
     category: string;
     label: string;
+    answer_type: "team" | "player" | "text";
     points_value: number;
     lock_at: string;
-    correct_answer: string | null;
+    correct_answer_text: string | null;
+    correct_answer_team_id: number | null;
+    correct_answer_player_id: string | null;
   };
   existingBet?: {
-    answer: string;
+    answer_text: string | null;
+    answer_team_id: number | null;
+    answer_player_id: string | null;
     points_earned: number | null;
   };
+  teams: ComboboxItem[];
+  players: ComboboxItem[];
 };
 
-export function TournamentBetCard({ config, existingBet }: TournamentBetCardProps) {
+function getCorrectAnswerLabel(
+  config: TournamentBetCardProps["config"],
+  teams: ComboboxItem[],
+  players: ComboboxItem[]
+): string | null {
+  if (config.answer_type === "team" && config.correct_answer_team_id != null) {
+    return teams.find((t) => t.id === String(config.correct_answer_team_id))?.label ?? null;
+  }
+  if (config.answer_type === "player" && config.correct_answer_player_id != null) {
+    return players.find((p) => p.id === config.correct_answer_player_id)?.label ?? null;
+  }
+  return config.correct_answer_text;
+}
+
+function getExistingValue(
+  answerType: string,
+  bet?: TournamentBetCardProps["existingBet"]
+): string | null {
+  if (!bet) return null;
+  if (answerType === "team" && bet.answer_team_id != null) return String(bet.answer_team_id);
+  if (answerType === "player" && bet.answer_player_id != null) return bet.answer_player_id;
+  return null;
+}
+
+export function TournamentBetCard({ config, existingBet, teams, players }: TournamentBetCardProps) {
   const isLocked = new Date(config.lock_at) <= new Date();
+  const isTyped = config.answer_type === "team" || config.answer_type === "player";
+
+  const [selectedId, setSelectedId] = useState<string | null>(
+    getExistingValue(config.answer_type, existingBet)
+  );
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
@@ -27,6 +64,9 @@ export function TournamentBetCard({ config, existingBet }: TournamentBetCardProp
     },
     null
   );
+
+  const correctLabel = getCorrectAnswerLabel(config, teams, players);
+  const hasCorrectAnswer = correctLabel != null;
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -42,19 +82,31 @@ export function TournamentBetCard({ config, existingBet }: TournamentBetCardProp
 
       <form action={formAction}>
         <input type="hidden" name="category" value={config.category} />
+        <input type="hidden" name="answer_type" value={config.answer_type} />
 
-        <input
-          name="answer"
-          type="text"
-          defaultValue={existingBet?.answer ?? ""}
-          disabled={isLocked}
-          placeholder="Tu predicción..."
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
-        />
+        {isTyped ? (
+          <SearchCombobox
+            items={config.answer_type === "team" ? teams : players}
+            value={selectedId}
+            onChange={setSelectedId}
+            disabled={isLocked}
+            placeholder={config.answer_type === "team" ? "Buscar equipo..." : "Buscar jugador..."}
+            name={config.answer_type === "team" ? "answer_team_id" : "answer_player_id"}
+          />
+        ) : (
+          <input
+            name="answer_text"
+            type="text"
+            defaultValue={existingBet?.answer_text ?? ""}
+            disabled={isLocked}
+            placeholder="Tu predicción..."
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
+          />
+        )}
 
-        {config.correct_answer && (
+        {hasCorrectAnswer && (
           <p className="mt-2 text-xs text-gray-500">
-            Respuesta correcta: <span className="font-semibold">{config.correct_answer}</span>
+            Respuesta correcta: <span className="font-semibold">{correctLabel}</span>
             {existingBet?.points_earned != null && (
               <span className="ml-2 font-bold text-green-600">
                 +{existingBet.points_earned} pts

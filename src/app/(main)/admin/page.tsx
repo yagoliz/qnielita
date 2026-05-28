@@ -10,6 +10,7 @@ import { UserOverview } from "@/components/admin/user-overview";
 import type { UserWithStats } from "@/components/admin/user-overview";
 import { TeamAssignment } from "@/components/admin/team-assignment";
 import { BracketConfigEditor } from "@/components/admin/bracket-config";
+import type { ComboboxItem } from "@/components/search-combobox";
 import { AdminTabs } from "./tabs";
 
 export default async function AdminPage() {
@@ -41,12 +42,12 @@ export default async function AdminPage() {
 
   const { data: tournamentConfigs } = await supabase
     .from("tournament_bet_config")
-    .select("category, label, points_value, correct_answer")
+    .select("category, label, answer_type, points_value, correct_answer_text, correct_answer_team_id, correct_answer_player_id")
     .order("points_value", { ascending: false });
 
   const { data: customBets } = await supabase
     .from("custom_bets")
-    .select("id, question, bet_type, options, points_value, lock_at, correct_answer")
+    .select("id, question, bet_type, options, points_value, lock_at, correct_answer_text, correct_answer_team_id, correct_answer_player_id")
     .order("lock_at", { ascending: false });
 
   const { data: invites } = await supabase
@@ -130,6 +131,29 @@ export default async function AdminPage() {
     .select("*")
     .single();
 
+  const { data: allTeams } = await supabase
+    .from("teams")
+    .select("id, name, code, group_id")
+    .neq("group_id", 13)
+    .order("name");
+
+  const { data: allPlayers } = await supabase
+    .from("players")
+    .select("id, name, team:teams!players_team_id_fkey(name, code)")
+    .order("name");
+
+  const teamItems: ComboboxItem[] = (allTeams ?? []).map((t: any) => ({
+    id: String(t.id),
+    label: `${t.name} (${t.code})`,
+    searchTerms: `${t.name} ${t.code}`,
+  }));
+
+  const playerItems: ComboboxItem[] = (allPlayers ?? []).map((p: any) => ({
+    id: p.id,
+    label: `${p.name} — ${(p.team as any)?.name ?? ""}`,
+    searchTerms: `${p.name} ${(p.team as any)?.name ?? ""} ${(p.team as any)?.code ?? ""}`,
+  }));
+
   const formattedR32 = (r32Matches ?? []).map((m: any) => ({
     id: m.id,
     kickoff_at: m.kickoff_at,
@@ -164,11 +188,19 @@ export default async function AdminPage() {
         apuestasContent={
           <div className="space-y-4">
             <CustomBetForm />
-            <CustomBetResolution bets={(customBets ?? []) as any} />
+            <CustomBetResolution
+              bets={(customBets ?? []) as any}
+              teams={teamItems}
+              players={playerItems}
+            />
           </div>
         }
         torneoContent={
-          <TournamentResolution configs={tournamentConfigs ?? []} />
+          <TournamentResolution
+            configs={tournamentConfigs ?? []}
+            teams={teamItems}
+            players={playerItems}
+          />
         }
         bracketContent={
           <div className="space-y-4">

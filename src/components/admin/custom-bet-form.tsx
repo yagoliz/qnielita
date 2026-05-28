@@ -31,6 +31,8 @@ export function CustomBetForm() {
         <option value="yes_no">Sí / No</option>
         <option value="multiple_choice">Opción múltiple</option>
         <option value="open_text">Texto libre</option>
+        <option value="team">Equipo</option>
+        <option value="player">Jugador</option>
       </select>
 
       <input

@@ -1,6 +1,7 @@
 "use client";
 
 import { Countdown } from "./countdown";
+import { SearchCombobox, type ComboboxItem } from "./search-combobox";
 import { submitCustomBetAnswer } from "@/actions/bets";
 import { useActionState, useState } from "react";
 
@@ -12,17 +13,51 @@ type CustomBetCardProps = {
     options: string[] | null;
     points_value: number;
     lock_at: string;
-    correct_answer: string | null;
+    correct_answer_text: string | null;
+    correct_answer_team_id: number | null;
+    correct_answer_player_id: string | null;
   };
   existingAnswer?: {
-    answer: string;
+    answer_text: string | null;
+    answer_team_id: number | null;
+    answer_player_id: string | null;
     points_earned: number | null;
   };
+  teams: ComboboxItem[];
+  players: ComboboxItem[];
 };
 
-export function CustomBetCard({ bet, existingAnswer }: CustomBetCardProps) {
+function getCorrectAnswerLabel(
+  bet: CustomBetCardProps["bet"],
+  teams: ComboboxItem[],
+  players: ComboboxItem[]
+): string | null {
+  if (bet.bet_type === "team" && bet.correct_answer_team_id != null) {
+    return teams.find((t) => t.id === String(bet.correct_answer_team_id))?.label ?? null;
+  }
+  if (bet.bet_type === "player" && bet.correct_answer_player_id != null) {
+    return players.find((p) => p.id === bet.correct_answer_player_id)?.label ?? null;
+  }
+  return bet.correct_answer_text;
+}
+
+function getExistingValue(
+  betType: string,
+  answer?: CustomBetCardProps["existingAnswer"]
+): string {
+  if (!answer) return "";
+  if (betType === "team" && answer.answer_team_id != null) return String(answer.answer_team_id);
+  if (betType === "player" && answer.answer_player_id != null) return answer.answer_player_id;
+  return answer.answer_text ?? "";
+}
+
+export function CustomBetCard({ bet, existingAnswer, teams, players }: CustomBetCardProps) {
   const isLocked = new Date(bet.lock_at) <= new Date();
-  const [selected, setSelected] = useState<string>(existingAnswer?.answer ?? "");
+  const isTyped = bet.bet_type === "team" || bet.bet_type === "player";
+
+  const [selected, setSelected] = useState<string>(
+    getExistingValue(bet.bet_type, existingAnswer)
+  );
 
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
@@ -30,6 +65,9 @@ export function CustomBetCard({ bet, existingAnswer }: CustomBetCardProps) {
     },
     null
   );
+
+  const correctLabel = getCorrectAnswerLabel(bet, teams, players);
+  const hasCorrectAnswer = correctLabel != null;
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -45,6 +83,7 @@ export function CustomBetCard({ bet, existingAnswer }: CustomBetCardProps) {
 
       <form action={formAction}>
         <input type="hidden" name="custom_bet_id" value={bet.id} />
+        <input type="hidden" name="bet_type" value={bet.bet_type} />
 
         {bet.bet_type === "yes_no" && (
           <div className="flex gap-2">
@@ -59,7 +98,7 @@ export function CustomBetCard({ bet, existingAnswer }: CustomBetCardProps) {
               >
                 <input
                   type="radio"
-                  name="answer"
+                  name="answer_text"
                   value={option}
                   checked={selected === option}
                   onChange={() => setSelected(option)}
@@ -85,7 +124,7 @@ export function CustomBetCard({ bet, existingAnswer }: CustomBetCardProps) {
               >
                 <input
                   type="radio"
-                  name="answer"
+                  name="answer_text"
                   value={option}
                   checked={selected === option}
                   onChange={() => setSelected(option)}
@@ -100,18 +139,29 @@ export function CustomBetCard({ bet, existingAnswer }: CustomBetCardProps) {
 
         {bet.bet_type === "open_text" && (
           <input
-            name="answer"
+            name="answer_text"
             type="text"
-            defaultValue={existingAnswer?.answer ?? ""}
+            defaultValue={existingAnswer?.answer_text ?? ""}
             disabled={isLocked}
             placeholder="Tu respuesta..."
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
           />
         )}
 
-        {bet.correct_answer && (
+        {isTyped && (
+          <SearchCombobox
+            items={bet.bet_type === "team" ? teams : players}
+            value={selected || null}
+            onChange={(id) => setSelected(id ?? "")}
+            disabled={isLocked}
+            placeholder={bet.bet_type === "team" ? "Buscar equipo..." : "Buscar jugador..."}
+            name={bet.bet_type === "team" ? "answer_team_id" : "answer_player_id"}
+          />
+        )}
+
+        {hasCorrectAnswer && (
           <p className="mt-2 text-xs text-gray-500">
-            Respuesta: <span className="font-semibold">{bet.correct_answer}</span>
+            Respuesta: <span className="font-semibold">{correctLabel}</span>
             {existingAnswer?.points_earned != null && (
               <span className="ml-2 font-bold text-green-600">
                 +{existingAnswer.points_earned} pts

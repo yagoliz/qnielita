@@ -110,15 +110,35 @@ export async function resolveCustomBet(formData: FormData) {
   const { supabase } = await requireAdmin();
 
   const betId = formData.get("bet_id") as string;
-  const correctAnswer = formData.get("correct_answer") as string;
+  const betType = formData.get("bet_type") as string;
 
-  if (!betId || !correctAnswer) {
-    return { error: "Debes indicar la respuesta correcta." };
+  if (!betId || !betType) {
+    return { error: "Datos incompletos." };
+  }
+
+  const update: Record<string, unknown> = {
+    correct_answer_text: null,
+    correct_answer_team_id: null,
+    correct_answer_player_id: null,
+  };
+
+  if (betType === "team") {
+    const teamId = formData.get("correct_answer_team_id") as string;
+    if (!teamId) return { error: "Debes seleccionar un equipo." };
+    update.correct_answer_team_id = parseInt(teamId, 10);
+  } else if (betType === "player") {
+    const playerId = formData.get("correct_answer_player_id") as string;
+    if (!playerId) return { error: "Debes seleccionar un jugador." };
+    update.correct_answer_player_id = playerId;
+  } else {
+    const text = (formData.get("correct_answer_text") as string)?.trim();
+    if (!text) return { error: "Debes indicar la respuesta correcta." };
+    update.correct_answer_text = text;
   }
 
   const { error } = await supabase
     .from("custom_bets")
-    .update({ correct_answer: correctAnswer })
+    .update(update)
     .eq("id", betId);
 
   if (error) return { error: error.message };
@@ -159,15 +179,35 @@ export async function resolveTournamentBet(formData: FormData) {
   const { supabase } = await requireAdmin();
 
   const category = formData.get("category") as string;
-  const correctAnswer = formData.get("correct_answer") as string;
+  const answerType = formData.get("answer_type") as string;
 
-  if (!category || !correctAnswer) {
-    return { error: "Debes indicar la respuesta correcta." };
+  if (!category || !answerType) {
+    return { error: "Datos incompletos." };
+  }
+
+  const update: Record<string, unknown> = {
+    correct_answer_text: null,
+    correct_answer_team_id: null,
+    correct_answer_player_id: null,
+  };
+
+  if (answerType === "team") {
+    const teamId = formData.get("correct_answer_team_id") as string;
+    if (!teamId) return { error: "Debes seleccionar un equipo." };
+    update.correct_answer_team_id = parseInt(teamId, 10);
+  } else if (answerType === "player") {
+    const playerId = formData.get("correct_answer_player_id") as string;
+    if (!playerId) return { error: "Debes seleccionar un jugador." };
+    update.correct_answer_player_id = playerId;
+  } else {
+    const text = (formData.get("correct_answer_text") as string)?.trim();
+    if (!text) return { error: "Debes indicar la respuesta correcta." };
+    update.correct_answer_text = text;
   }
 
   const { error } = await supabase
     .from("tournament_bet_config")
-    .update({ correct_answer: correctAnswer })
+    .update(update)
     .eq("category", category);
 
   if (error) return { error: error.message };

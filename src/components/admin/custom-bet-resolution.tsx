@@ -1,17 +1,20 @@
 "use client";
 
 import { deleteCustomBet, resolveCustomBet } from "@/actions/admin";
+import { SearchCombobox, type ComboboxItem } from "@/components/search-combobox";
 import { useActionState, useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 
 type CustomBet = {
   id: string;
   question: string;
-  bet_type: "yes_no" | "multiple_choice" | "open_text";
+  bet_type: "yes_no" | "multiple_choice" | "open_text" | "team" | "player";
   options: string[] | null;
   points_value: number;
   lock_at: string;
-  correct_answer: string | null;
+  correct_answer_text: string | null;
+  correct_answer_team_id: number | null;
+  correct_answer_player_id: string | null;
 };
 
 function DeleteCustomBetButton({ betId }: { betId: string }) {
@@ -52,7 +55,28 @@ function DeleteCustomBetButton({ betId }: { betId: string }) {
   );
 }
 
-function SingleCustomBetForm({ bet }: { bet: CustomBet }) {
+function getExistingCorrectId(bet: CustomBet): string | null {
+  if (bet.bet_type === "team" && bet.correct_answer_team_id != null) {
+    return String(bet.correct_answer_team_id);
+  }
+  if (bet.bet_type === "player" && bet.correct_answer_player_id != null) {
+    return bet.correct_answer_player_id;
+  }
+  return null;
+}
+
+function SingleCustomBetForm({
+  bet,
+  teams,
+  players,
+}: {
+  bet: CustomBet;
+  teams: ComboboxItem[];
+  players: ComboboxItem[];
+}) {
+  const isTyped = bet.bet_type === "team" || bet.bet_type === "player";
+  const [selectedId, setSelectedId] = useState<string | null>(getExistingCorrectId(bet));
+
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string; success?: boolean } | null, formData: FormData) => {
       return await resolveCustomBet(formData);
@@ -61,6 +85,10 @@ function SingleCustomBetForm({ bet }: { bet: CustomBet }) {
   );
 
   const isLocked = new Date(bet.lock_at) <= new Date();
+  const hasCorrectAnswer =
+    bet.correct_answer_text != null ||
+    bet.correct_answer_team_id != null ||
+    bet.correct_answer_player_id != null;
 
   return (
     <form
@@ -68,6 +96,7 @@ function SingleCustomBetForm({ bet }: { bet: CustomBet }) {
       className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-3"
     >
       <input type="hidden" name="bet_id" value={bet.id} />
+      <input type="hidden" name="bet_type" value={bet.bet_type} />
       <div className="flex items-start justify-between gap-2">
         <span className="font-semibold text-sm flex-1">{bet.question}</span>
         <div className="flex items-center gap-2 shrink-0">
@@ -84,8 +113,8 @@ function SingleCustomBetForm({ bet }: { bet: CustomBet }) {
 
       {bet.bet_type === "yes_no" && (
         <select
-          name="correct_answer"
-          defaultValue={bet.correct_answer ?? ""}
+          name="correct_answer_text"
+          defaultValue={bet.correct_answer_text ?? ""}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
         >
           <option value="" disabled>Selecciona respuesta...</option>
@@ -96,8 +125,8 @@ function SingleCustomBetForm({ bet }: { bet: CustomBet }) {
 
       {bet.bet_type === "multiple_choice" && bet.options && (
         <select
-          name="correct_answer"
-          defaultValue={bet.correct_answer ?? ""}
+          name="correct_answer_text"
+          defaultValue={bet.correct_answer_text ?? ""}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
         >
           <option value="" disabled>Selecciona respuesta...</option>
@@ -109,11 +138,21 @@ function SingleCustomBetForm({ bet }: { bet: CustomBet }) {
 
       {bet.bet_type === "open_text" && (
         <input
-          name="correct_answer"
+          name="correct_answer_text"
           type="text"
-          defaultValue={bet.correct_answer ?? ""}
+          defaultValue={bet.correct_answer_text ?? ""}
           placeholder="Respuesta..."
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        />
+      )}
+
+      {isTyped && (
+        <SearchCombobox
+          items={bet.bet_type === "team" ? teams : players}
+          value={selectedId}
+          onChange={setSelectedId}
+          placeholder={bet.bet_type === "team" ? "Buscar equipo..." : "Buscar jugador..."}
+          name={bet.bet_type === "team" ? "correct_answer_team_id" : "correct_answer_player_id"}
         />
       )}
 
@@ -122,7 +161,7 @@ function SingleCustomBetForm({ bet }: { bet: CustomBet }) {
         disabled={pending}
         className="w-full bg-green-600 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
       >
-        {pending ? "Guardando..." : bet.correct_answer ? "Actualizar" : "Resolver"}
+        {pending ? "Guardando..." : hasCorrectAnswer ? "Actualizar" : "Resolver"}
       </button>
 
       {state?.error && <p className="text-red-600 text-xs">{state.error}</p>}
@@ -131,7 +170,15 @@ function SingleCustomBetForm({ bet }: { bet: CustomBet }) {
   );
 }
 
-export function CustomBetResolution({ bets }: { bets: CustomBet[] }) {
+export function CustomBetResolution({
+  bets,
+  teams,
+  players,
+}: {
+  bets: CustomBet[];
+  teams: ComboboxItem[];
+  players: ComboboxItem[];
+}) {
   if (bets.length === 0) {
     return (
       <p className="text-sm text-gray-500 text-center py-4">
@@ -143,7 +190,7 @@ export function CustomBetResolution({ bets }: { bets: CustomBet[] }) {
   return (
     <div className="space-y-3">
       {bets.map((bet) => (
-        <SingleCustomBetForm key={bet.id} bet={bet} />
+        <SingleCustomBetForm key={bet.id} bet={bet} teams={teams} players={players} />
       ))}
     </div>
   );
