@@ -9,7 +9,7 @@ const KNOCKOUT_ROUNDS = [
   { stage: "final", label: "Final" },
 ] as const;
 
-export function KnockoutStageResults({ matches }: { matches: Match[] }) {
+export function KnockoutStageResults({ matches, overrideLock }: { matches: Match[]; overrideLock: boolean }) {
   return (
     <div className="space-y-4">
       {KNOCKOUT_ROUNDS.map(({ stage, label }) => {
@@ -39,7 +39,7 @@ export function KnockoutStageResults({ matches }: { matches: Match[] }) {
             ) : (
               <div className="space-y-2">
                 {roundMatches.map((match) => (
-                  <MatchResultRow key={match.id} match={match} />
+                  <MatchResultRow key={match.id} match={match} overrideLock={overrideLock} />
                 ))}
               </div>
             )}

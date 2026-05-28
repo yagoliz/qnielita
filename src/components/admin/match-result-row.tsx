@@ -18,7 +18,7 @@ export type Match = {
   } | null;
 };
 
-export function MatchResultRow({ match }: { match: Match }) {
+export function MatchResultRow({ match, overrideLock = false }: { match: Match; overrideLock?: boolean }) {
   const [homeScore, setHomeScore] = useState<string>(
     match.result?.home_score?.toString() ?? ""
   );
@@ -40,18 +40,19 @@ export function MatchResultRow({ match }: { match: Match }) {
   );
 
   const isFuture = new Date(match.kickoff_at) > new Date();
+  const isLocked = isFuture && !overrideLock;
   const isKnockout = match.stage !== "group";
   const homeNum = parseInt(homeScore, 10);
   const awayNum = parseInt(awayScore, 10);
   const isTied =
     !isNaN(homeNum) && !isNaN(awayNum) && homeNum === awayNum;
-  const showPenaltyPicker = isKnockout && isTied && !isFuture;
+  const showPenaltyPicker = isKnockout && isTied && !isLocked;
 
   return (
     <form
       action={formAction}
       className={`bg-white rounded-lg p-3 shadow-sm border border-gray-100 ${
-        isFuture ? "opacity-50" : ""
+        isLocked ? "opacity-50" : ""
       }`}
     >
       <input type="hidden" name="match_id" value={match.id} />
@@ -77,7 +78,7 @@ export function MatchResultRow({ match }: { match: Match }) {
             type="number"
             min={0}
             value={homeScore}
-            disabled={isFuture}
+            disabled={isLocked}
             onChange={(e) => {
               setHomeScore(e.target.value);
               setPenaltyWinner(null);
@@ -90,14 +91,14 @@ export function MatchResultRow({ match }: { match: Match }) {
             type="number"
             min={0}
             value={awayScore}
-            disabled={isFuture}
+            disabled={isLocked}
             onChange={(e) => {
               setAwayScore(e.target.value);
               setPenaltyWinner(null);
             }}
             className="w-12 h-8 text-center border rounded text-sm disabled:bg-gray-50"
           />
-          {!isFuture && (
+          {!isLocked && (
             <button
               type="submit"
               disabled={pending || (showPenaltyPicker && !penaltyWinner)}

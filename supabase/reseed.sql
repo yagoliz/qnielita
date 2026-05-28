@@ -8,7 +8,8 @@ TRUNCATE
   matches,
   teams,
   groups,
-  tournament_bet_config
+  tournament_bet_config,
+  leaderboard
   RESTART IDENTITY CASCADE;
 
 \i seed.sql

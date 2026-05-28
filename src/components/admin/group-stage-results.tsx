@@ -9,7 +9,7 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export function GroupStageResults({ matches }: { matches: Match[] }) {
+export function GroupStageResults({ matches, overrideLock }: { matches: Match[]; overrideLock: boolean }) {
   const sorted = [...matches].sort(
     (a, b) =>
       new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime()
@@ -40,7 +40,7 @@ export function GroupStageResults({ matches }: { matches: Match[] }) {
           </h3>
           <div className="space-y-2">
             {dateMatches.map((match) => (
-              <MatchResultRow key={match.id} match={match} />
+              <MatchResultRow key={match.id} match={match} overrideLock={overrideLock} />
             ))}
           </div>
         </div>
