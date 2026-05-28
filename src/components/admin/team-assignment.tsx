@@ -31,7 +31,7 @@ export function TeamAssignment({
       <AutoFillButton />
       {r32Matches.map((match) => (
         <TeamAssignmentRow
-          key={match.id}
+          key={`${match.id}-${match.home_team?.id}-${match.away_team?.id}`}
           match={match}
           realTeams={realTeams}
         />

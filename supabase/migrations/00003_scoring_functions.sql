@@ -190,6 +190,68 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Propagate knockout winners (and losers for 3rd place) to downstream matches
+CREATE OR REPLACE FUNCTION propagate_knockout_winner(p_match_id INTEGER)
+RETURNS VOID AS $$
+DECLARE
+  v_stage match_stage;
+  v_home INTEGER;
+  v_away INTEGER;
+  v_home_score INTEGER;
+  v_away_score INTEGER;
+  v_penalty TEXT;
+  v_winner_id INTEGER;
+  v_loser_id INTEGER;
+  v_winner_code TEXT;
+  v_loser_code TEXT;
+  v_winner_placeholder_id INTEGER;
+  v_loser_placeholder_id INTEGER;
+BEGIN
+  SELECT m.stage, m.home_team_id, m.away_team_id,
+         mr.home_score, mr.away_score, mr.penalty_winner
+  INTO v_stage, v_home, v_away, v_home_score, v_away_score, v_penalty
+  FROM matches m
+  JOIN match_results mr ON mr.match_id = m.id
+  WHERE m.id = p_match_id;
+
+  IF NOT FOUND OR v_stage = 'group' THEN RETURN; END IF;
+
+  IF v_home_score > v_away_score THEN
+    v_winner_id := v_home; v_loser_id := v_away;
+  ELSIF v_away_score > v_home_score THEN
+    v_winner_id := v_away; v_loser_id := v_home;
+  ELSIF v_penalty = 'home' THEN
+    v_winner_id := v_home; v_loser_id := v_away;
+  ELSIF v_penalty = 'away' THEN
+    v_winner_id := v_away; v_loser_id := v_home;
+  ELSE
+    RETURN;
+  END IF;
+
+  v_winner_code := 'W' || p_match_id;
+  v_loser_code := 'L' || p_match_id;
+
+  SELECT id INTO v_winner_placeholder_id FROM teams WHERE code = v_winner_code;
+  SELECT id INTO v_loser_placeholder_id FROM teams WHERE code = v_loser_code;
+
+  IF v_winner_placeholder_id IS NOT NULL THEN
+    UPDATE matches SET home_team_id = v_winner_id
+    WHERE home_team_id = v_winner_placeholder_id;
+
+    UPDATE matches SET away_team_id = v_winner_id
+    WHERE away_team_id = v_winner_placeholder_id;
+  END IF;
+
+  IF v_loser_placeholder_id IS NOT NULL THEN
+    UPDATE matches SET home_team_id = v_loser_id
+    WHERE home_team_id = v_loser_placeholder_id;
+
+    UPDATE matches SET away_team_id = v_loser_id
+    WHERE away_team_id = v_loser_placeholder_id;
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Trigger: recalculate scores when match result is inserted or updated
 CREATE OR REPLACE FUNCTION on_match_result_change()
 RETURNS TRIGGER AS $$
@@ -201,6 +263,7 @@ BEGIN
   SELECT stage INTO v_stage FROM matches WHERE id = NEW.match_id;
   IF v_stage != 'group' THEN
     PERFORM recalculate_bracket_scores(NEW.match_id);
+    PERFORM propagate_knockout_winner(NEW.match_id);
   END IF;
 
   PERFORM recalculate_leaderboard();
