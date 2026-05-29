@@ -75,3 +75,96 @@ export function resolveGroupCode(
 
   return standings[position - 1].team_id;
 }
+
+export type TeamRef = { id: number; name: string; code: string };
+
+export type GroupMatchInput = {
+  id: number;
+  stage: string;
+  group_id: number | null;
+  group_name: string | null;
+  home_team: TeamRef;
+  away_team: TeamRef;
+};
+
+export type PredictionScore = {
+  match_id: number;
+  home_score: number;
+  away_score: number;
+};
+
+export type PredictedGroup = {
+  groupId: number;
+  groupName: string;
+  standings: Standing[];
+  teamsById: Record<number, TeamRef>;
+  predictedCount: number;
+  totalCount: number;
+};
+
+export function buildPredictedStandings(
+  matches: GroupMatchInput[],
+  predictions: PredictionScore[]
+): PredictedGroup[] {
+  const predById = new Map(predictions.map((p) => [p.match_id, p]));
+
+  type Acc = {
+    name: string;
+    teamIds: Set<number>;
+    teamsById: Record<number, TeamRef>;
+    results: GroupStageResult[];
+    totalCount: number;
+    predictedCount: number;
+  };
+  const byGroup = new Map<number, Acc>();
+
+  for (const m of matches) {
+    if (m.stage !== "group" || m.group_id == null) continue;
+
+    let g = byGroup.get(m.group_id);
+    if (!g) {
+      g = {
+        name: m.group_name ?? "",
+        teamIds: new Set(),
+        teamsById: {},
+        results: [],
+        totalCount: 0,
+        predictedCount: 0,
+      };
+      byGroup.set(m.group_id, g);
+    }
+
+    g.teamIds.add(m.home_team.id);
+    g.teamIds.add(m.away_team.id);
+    g.teamsById[m.home_team.id] = m.home_team;
+    g.teamsById[m.away_team.id] = m.away_team;
+    g.totalCount++;
+
+    const p = predById.get(m.id);
+    if (p) {
+      g.predictedCount++;
+      g.results.push({
+        match_id: m.id,
+        group_id: m.group_id,
+        home_team_id: m.home_team.id,
+        away_team_id: m.away_team.id,
+        home_score: p.home_score,
+        away_score: p.away_score,
+      });
+    }
+  }
+
+  const out: PredictedGroup[] = [];
+  for (const [groupId, g] of byGroup) {
+    out.push({
+      groupId,
+      groupName: g.name,
+      standings: computeGroupStandings([...g.teamIds], g.results),
+      teamsById: g.teamsById,
+      predictedCount: g.predictedCount,
+      totalCount: g.totalCount,
+    });
+  }
+  out.sort((a, b) => a.groupName.localeCompare(b.groupName));
+  return out;
+}

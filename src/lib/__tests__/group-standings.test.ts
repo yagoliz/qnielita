@@ -2,8 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   computeGroupStandings,
   resolveGroupCode,
+  buildPredictedStandings,
   type GroupStageResult,
   type Standing,
+  type GroupMatchInput,
+  type PredictionScore,
 } from "../group-standings";
 
 const A = 101;
@@ -139,5 +142,124 @@ describe("resolveGroupCode", () => {
     const map = new Map([["A", standings]]);
     expect(resolveGroupCode("1A", map)).toBe(A);
     expect(resolveGroupCode("2A", map)).toBeNull();
+  });
+});
+
+describe("buildPredictedStandings", () => {
+  const teams = {
+    [A]: { id: A, name: "Team A", code: "AAA" },
+    [B]: { id: B, name: "Team B", code: "BBB" },
+    [C]: { id: C, name: "Team C", code: "CCC" },
+    [D]: { id: D, name: "Team D", code: "DDD" },
+  } as const;
+
+  // All 6 group matches for a single group (group_id 1, name "A")
+  function groupMatches(): GroupMatchInput[] {
+    const pairs: [number, number][] = [
+      [A, B],
+      [C, D],
+      [A, C],
+      [B, D],
+      [A, D],
+      [B, C],
+    ];
+    return pairs.map(([h, a], i) => ({
+      id: i + 1,
+      stage: "group",
+      group_id: 1,
+      group_name: "A",
+      home_team: teams[h as keyof typeof teams],
+      away_team: teams[a as keyof typeof teams],
+    }));
+  }
+
+  function pred(match_id: number, hs: number, as_: number): PredictionScore {
+    return { match_id, home_score: hs, away_score: as_ };
+  }
+
+  it("builds a complete ordered table from a full set of predictions", () => {
+    // A wins all, B beats C and D, C beats D, D loses all
+    const ms = groupMatches();
+    const preds: PredictionScore[] = [
+      pred(1, 1, 0), // A beats B
+      pred(2, 1, 0), // C beats D
+      pred(3, 1, 0), // A beats C
+      pred(4, 1, 0), // B beats D
+      pred(5, 1, 0), // A beats D
+      pred(6, 1, 0), // B beats C
+    ];
+    const groups = buildPredictedStandings(ms, preds);
+    expect(groups).toHaveLength(1);
+    const g = groups[0];
+    expect(g.groupId).toBe(1);
+    expect(g.groupName).toBe("A");
+    expect(g.predictedCount).toBe(6);
+    expect(g.totalCount).toBe(6);
+    expect(g.standings.map((s) => s.team_id)).toEqual([A, B, C, D]);
+    expect(g.teamsById[A].code).toBe("AAA");
+  });
+
+  it("reflects only predicted matches in a partial table", () => {
+    const ms = groupMatches();
+    const preds: PredictionScore[] = [pred(1, 2, 0)]; // only A beats B predicted
+    const groups = buildPredictedStandings(ms, preds);
+    const g = groups[0];
+    expect(g.predictedCount).toBe(1);
+    expect(g.totalCount).toBe(6);
+    const a = g.standings.find((s) => s.team_id === A)!;
+    const b = g.standings.find((s) => s.team_id === B)!;
+    const c = g.standings.find((s) => s.team_id === C)!;
+    expect(a.played).toBe(1);
+    expect(a.pts).toBe(3);
+    expect(b.played).toBe(1);
+    expect(c.played).toBe(0);
+    expect(g.standings[0].team_id).toBe(A);
+  });
+
+  it("returns all teams with zero played when no predictions exist", () => {
+    const ms = groupMatches();
+    const groups = buildPredictedStandings(ms, []);
+    const g = groups[0];
+    expect(g.predictedCount).toBe(0);
+    expect(g.totalCount).toBe(6);
+    expect(g.standings).toHaveLength(4);
+    expect(g.standings.every((s) => s.played === 0 && s.pts === 0)).toBe(true);
+  });
+
+  it("ignores non-group matches and sorts groups by name", () => {
+    const teamE = { id: 201, name: "Team E", code: "EEE" };
+    const teamF = { id: 202, name: "Team F", code: "FFF" };
+    const ms: GroupMatchInput[] = [
+      // group B match (later alphabetically, declared first)
+      {
+        id: 10,
+        stage: "group",
+        group_id: 2,
+        group_name: "B",
+        home_team: teamE,
+        away_team: teamF,
+      },
+      // group A match
+      {
+        id: 11,
+        stage: "group",
+        group_id: 1,
+        group_name: "A",
+        home_team: teams[A],
+        away_team: teams[B],
+      },
+      // knockout match — must be ignored
+      {
+        id: 12,
+        stage: "R32",
+        group_id: null,
+        group_name: null,
+        home_team: teams[C],
+        away_team: teams[D],
+      },
+    ];
+    const groups = buildPredictedStandings(ms, []);
+    expect(groups.map((g) => g.groupName)).toEqual(["A", "B"]);
+    expect(groups.every((g) => g.groupId === 1 || g.groupId === 2)).toBe(true);
   });
 });
