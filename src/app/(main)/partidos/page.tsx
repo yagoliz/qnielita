@@ -5,7 +5,10 @@ import { Lock } from "lucide-react";
 import { PartidosTree } from "@/components/partidos-tree";
 import { PartidosTabs, type BracketStatus } from "@/components/partidos-tabs";
 import { BracketView } from "@/components/bracket/bracket-view";
+import { GruposSubtabs, type GroupView } from "@/components/grupos-subtabs";
+import { PredictedStandings } from "@/components/predicted-standings";
 import { buildBracketMap } from "@/lib/bracket";
+import { buildPredictedStandings, type GroupMatchInput } from "@/lib/group-standings";
 import {
   buildMatchTree,
   computeDefaultOpen,
@@ -17,11 +20,13 @@ import {
 } from "@/lib/match-tree";
 
 type PageProps = {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; view?: string }>;
 };
 
 export default async function PartidosPage({ searchParams }: PageProps) {
-  const { tab } = await searchParams;
+  const { tab, view } = await searchParams;
+  const groupView: GroupView =
+    view === "clasificacion" ? "clasificacion" : "predicciones";
 
   const supabase = await createClient();
   const {
@@ -34,8 +39,8 @@ export default async function PartidosPage({ searchParams }: PageProps) {
     .from("matches")
     .select(`
       id, kickoff_at, venue, stage, group_id,
-      home_team:teams!matches_home_team_id_fkey(name, code),
-      away_team:teams!matches_away_team_id_fkey(name, code),
+      home_team:teams!matches_home_team_id_fkey(id, name, code),
+      away_team:teams!matches_away_team_id_fkey(id, name, code),
       group:groups(name)
     `)
     .order("kickoff_at", { ascending: true });
@@ -131,6 +136,25 @@ export default async function PartidosPage({ searchParams }: PageProps) {
 
   const showGroupTree = activeTab === "grupos" && tabTree.groupStage.groups.length > 0;
 
+  const predictedGroups =
+    activeTab === "grupos" && groupView === "clasificacion"
+      ? buildPredictedStandings(
+          (matchesRaw ?? []).map((m: any): GroupMatchInput => ({
+            id: m.id,
+            stage: m.stage,
+            group_id: m.group_id,
+            group_name: m.group?.name ?? null,
+            home_team: m.home_team,
+            away_team: m.away_team,
+          })),
+          (predictions ?? []).map((p: any) => ({
+            match_id: p.match_id,
+            home_score: p.home_score,
+            away_score: p.away_score,
+          }))
+        )
+      : [];
+
   const partidosDeadlines: { label: string; targetDate: string }[] = [];
   if (activeTab === "grupos" && new Date(GROUP_STAGE_LOCK) > now) {
     partidosDeadlines.push({ label: "Cierre fase de grupos", targetDate: GROUP_STAGE_LOCK });
@@ -156,13 +180,20 @@ export default async function PartidosPage({ searchParams }: PageProps) {
       />
 
       {activeTab === "grupos" && (
-        showGroupTree ? (
-          <PartidosTree tree={tabTree} defaultOpen={defaultOpen} />
-        ) : (
-          <p className="text-gray-400 text-center mt-8">
-            No hay partidos disponibles todavía.
-          </p>
-        )
+        <>
+          <GruposSubtabs view={groupView} />
+          {groupView === "predicciones" ? (
+            showGroupTree ? (
+              <PartidosTree tree={tabTree} defaultOpen={defaultOpen} />
+            ) : (
+              <p className="text-gray-400 text-center mt-8">
+                No hay partidos disponibles todavía.
+              </p>
+            )
+          ) : (
+            <PredictedStandings groups={predictedGroups} />
+          )}
+        </>
       )}
 
       {activeTab === "eliminatorias" && bracketStatus === "not_open" && (
