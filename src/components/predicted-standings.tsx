@@ -2,7 +2,7 @@ import type { PredictedGroup } from "@/lib/group-standings";
 
 function rowAccent(position: number): string {
   if (position <= 2) return "border-l-2 border-green-500 bg-green-50/40";
-  if (position === 3) return "border-l-2 border-amber-400 bg-amber-50/40";
+  if (position === 3) return "border-l-2 border-amber-500 bg-amber-50/90";
   return "border-l-2 border-transparent";
 }
 
@@ -84,8 +84,9 @@ export function PredictedStandings({ groups }: { groups: PredictedGroup[] }) {
   return (
     <div>
       <p className="text-xs text-gray-400 mb-3 px-1">
-        Clasificación según tus predicciones. Verde: clasifica directo · Ámbar:
-        posible mejor tercero.
+        Clasificación según <strong>tus predicciones</strong>.  <br></br>
+        <a className={`text-green-500`}> Verde:</a> clasifica directo · 
+        <a className={`text-amber-400`}> Ámbar:</a> posible mejor tercero.
       </p>
       {groups.map((g) => (
         <GroupTable key={g.groupId} group={g} />

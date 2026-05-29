@@ -26,7 +26,7 @@ export function GruposSubtabs({ view }: { view: GroupView }) {
         className={`${base} ${tabClass(clasif)}`}
         aria-current={clasif ? "page" : undefined}
       >
-        <Table2 className="size-4 inline mr-1" /> Clasificación
+        <Table2 className="size-4 inline mr-1" /> Clasificación (Pred.)
       </Link>
     </div>
   );
