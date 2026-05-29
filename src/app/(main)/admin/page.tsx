@@ -73,7 +73,7 @@ export default async function AdminPage() {
 
   const { data: profiles } = await adminSupabase
     .from("profiles")
-    .select("id, display_name, avatar_emoji, is_admin, created_at")
+    .select("id, username, display_name, avatar_emoji, is_admin, created_at")
     .order("created_at", { ascending: true });
 
   const { data: leaderboardRows } = await adminSupabase
@@ -100,6 +100,7 @@ export default async function AdminPage() {
     const lb = leaderboardMap.get(p.id);
     return {
       id: p.id,
+      username: p.username,
       display_name: p.display_name,
       avatar_emoji: p.avatar_emoji,
       is_admin: p.is_admin,

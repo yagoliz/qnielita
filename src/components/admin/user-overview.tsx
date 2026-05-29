@@ -10,6 +10,7 @@ import {
 
 export type UserWithStats = {
   id: string;
+  username: string;
   display_name: string;
   avatar_emoji: string;
   is_admin: boolean;
@@ -93,7 +94,9 @@ function UserCard({ user, isSelf }: { user: UserWithStats; isSelf: boolean }) {
         )}
       </div>
 
-      <p className="text-xs text-gray-400 mb-2">Desde {joinDate}</p>
+      <p className="text-xs text-gray-400 mb-2">
+        @{user.username} · Desde {joinDate}
+      </p>
 
       <div className="flex gap-3 text-xs text-gray-500 mb-3">
         <span>#{user.rank ?? "—"} ranking</span>
@@ -205,6 +208,16 @@ function EditUserCard({
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-green-200">
       <div className="space-y-2 mb-3">
+        <div>
+          <label className="text-xs text-gray-500">Usuario</label>
+          <input
+            type="text"
+            value={user.username}
+            readOnly
+            disabled
+            className="w-full border border-gray-200 bg-gray-50 rounded px-2 py-1 text-sm text-gray-500"
+          />
+        </div>
         <div>
           <label className="text-xs text-gray-500">Nombre</label>
           <input

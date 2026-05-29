@@ -8,6 +8,7 @@ import { Check } from "lucide-react";
 const emojiOptions = ["⚽", "🏆", "🥇", "🇪🇸", "🇦🇷", "🇧🇷", "🇫🇷", "🇩🇪", "🦁", "🐐", "🔥", "⭐"];
 
 export default function PerfilPage() {
+  const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [avatar, setAvatar] = useState("⚽");
   const [saving, setSaving] = useState(false);
@@ -19,10 +20,11 @@ export default function PerfilPage() {
       if (!user) return;
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, avatar_emoji")
+        .select("username, display_name, avatar_emoji")
         .eq("id", user.id)
         .single();
       if (data) {
+        setUsername(data.username);
         setDisplayName(data.display_name);
         setAvatar(data.avatar_emoji);
       }
@@ -50,6 +52,17 @@ export default function PerfilPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Perfil</h1>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Usuario</label>
+        <input
+          type="text"
+          value={username}
+          readOnly
+          disabled
+          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-500"
+        />
+      </div>
 
       <div>
         <label className="block text-sm font-medium mb-1">Nombre</label>
