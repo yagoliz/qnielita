@@ -80,12 +80,24 @@ export function calculateBracketMatchScore(
 
   let scorePoints = 0;
   if (stage === "R32") {
+    // R32 fixtures are seeded from groups, so there is no team gate.
     scorePoints = calculateMatchPoints(predHomeScore, predAwayScore, actualHomeScore, actualAwayScore);
   } else {
     const homeMatch = predHome === actualHome || predHome === actualAway;
     const awayMatch = predAway === actualHome || predAway === actualAway;
-    if (homeMatch && awayMatch) {
-      scorePoints = calculateMatchPoints(predHomeScore, predAwayScore, actualHomeScore, actualAwayScore);
+
+    if (homeMatch || awayMatch) {
+      // Anchor on a matched predicted team and reorient both scorelines from
+      // its side (slot-agnostic), then grade with the normal 5/3/2/0 ladder.
+      const anchor = homeMatch ? predHome : predAway;
+      const predFor = homeMatch ? predHomeScore : predAwayScore;
+      const predAgainst = homeMatch ? predAwayScore : predHomeScore;
+      const actualFor = anchor === actualHome ? actualHomeScore : actualAwayScore;
+      const actualAgainst = anchor === actualHome ? actualAwayScore : actualHomeScore;
+
+      const raw = calculateMatchPoints(predFor, predAgainst, actualFor, actualAgainst);
+      // Full credit when both predicted teams match; halved (rounded down) for one.
+      scorePoints = homeMatch && awayMatch ? raw : Math.floor(raw / 2);
     }
   }
 
