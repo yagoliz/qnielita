@@ -24,7 +24,7 @@ export async function submitSingleBracketMatch(prediction: BracketPrediction) {
     return { error: "Los goles no pueden ser negativos." };
   }
   if (prediction.home_score === prediction.away_score && !prediction.penalty_winner) {
-    return { error: "Debes indicar ganador en penales si hay empate." };
+    return { error: "Debes indicar ganador en penaltis si hay empate." };
   }
 
   const { error } = await supabase
@@ -75,7 +75,7 @@ export async function submitBracket(predictions: BracketPrediction[]) {
       return { error: "Los goles no pueden ser negativos." };
     }
     if (p.home_score === p.away_score && !p.penalty_winner) {
-      return { error: `Partido ${p.match_id}: debes indicar ganador en penales si hay empate.` };
+      return { error: `Partido ${p.match_id}: debes indicar ganador en penaltis si hay empate.` };
     }
   }
 

@@ -112,7 +112,7 @@ export function BracketMatch({ match, locked, onScoreChange, onPenaltyChange, on
 
       {isTied && !locked && (
         <div className="mt-2 flex justify-center gap-2">
-          <span className="text-xs text-gray-500">Penales:</span>
+          <span className="text-xs text-gray-500">Penaltis:</span>
           <button
             type="button"
             onClick={() => onPenaltyChange(match.matchId, "home")}

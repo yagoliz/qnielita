@@ -46,7 +46,7 @@ export async function submitMatchResult(formData: FormData) {
   const isTied = homeScore === awayScore;
 
   if (isKnockout && isTied && !penaltyWinnerRaw) {
-    return { error: "Debes indicar quién avanzó en penales." };
+    return { error: "Debes indicar quién avanzó en penaltis." };
   }
 
   const penaltyWinner =

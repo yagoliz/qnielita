@@ -134,7 +134,7 @@ export function MatchResultRow({ match, overrideLock = false }: { match: Match; 
       {showPenaltyPicker && (
         <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-2 flex items-center justify-between">
           <span className="text-xs text-amber-800">
-            ¿Quién avanzó en penales?
+            ¿Quién avanzó en penaltis?
           </span>
           <div className="flex gap-1">
             <button

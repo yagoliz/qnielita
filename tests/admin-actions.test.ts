@@ -180,7 +180,7 @@ describe("submitMatchResult", () => {
       makeFormData({ match_id: "1", home_score: "2", away_score: "2", stage: "QF" })
     );
     expect(result).toEqual({
-      error: "Debes indicar quién avanzó en penales.",
+      error: "Debes indicar quién avanzó en penaltis.",
     });
   });
 
