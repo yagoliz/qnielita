@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TeamFlag } from "./team-flag";
 
 function formatKickoff(iso: string) {
   return new Date(iso).toLocaleString("es-ES", {
@@ -59,7 +60,10 @@ export function MatchPreviewCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex-1 text-right">
           <p className="font-semibold text-sm">{match.home_team?.name ?? "?"}</p>
-          <p className="text-xs text-gray-400">{match.home_team?.code ?? ""}</p>
+          <div className="flex items-center justify-end gap-1.5">
+            <span className="text-xs text-gray-400">{match.home_team?.code ?? ""}</span>
+            <TeamFlag code={match.home_team?.code} />
+          </div>
         </div>
 
         <div className="flex items-center gap-1">
@@ -70,7 +74,10 @@ export function MatchPreviewCard({
 
         <div className="flex-1">
           <p className="font-semibold text-sm">{match.away_team?.name ?? "?"}</p>
-          <p className="text-xs text-gray-400">{match.away_team?.code ?? ""}</p>
+          <div className="flex items-center gap-1.5">
+            <TeamFlag code={match.away_team?.code} />
+            <span className="text-xs text-gray-400">{match.away_team?.code ?? ""}</span>
+          </div>
         </div>
       </div>
 
