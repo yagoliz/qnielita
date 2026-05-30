@@ -3,6 +3,7 @@
 import { login } from "@/actions/auth";
 import { useActionState } from "react";
 import { Trophy } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(
@@ -61,6 +62,12 @@ export default function LoginPage() {
           {pending ? "Entrando..." : "Entrar"}
         </button>
       </form>
+
+      <p className="mt-6 text-center text-sm text-gray-500">
+        <Link href="/reglas" className="font-medium text-green-700 hover:text-green-800">
+          ¿Cómo funciona? Reglas y puntuación
+        </Link>
+      </p>
     </div>
   );
 }

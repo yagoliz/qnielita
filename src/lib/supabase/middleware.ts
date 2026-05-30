@@ -33,7 +33,10 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/registro");
 
-  if (!user && !isAuthPage) {
+  // Public pages anyone can view, logged in or not (no redirect either way).
+  const isPublicPage = request.nextUrl.pathname.startsWith("/reglas");
+
+  if (!user && !isAuthPage && !isPublicPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
