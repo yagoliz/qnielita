@@ -7,6 +7,7 @@ import { PartidosTabs, type BracketStatus } from "@/components/partidos-tabs";
 import { BracketView } from "@/components/bracket/bracket-view";
 import { GruposSubtabs, type GroupView } from "@/components/grupos-subtabs";
 import { PredictedStandings } from "@/components/predicted-standings";
+import { FillRandomButton } from "@/components/fill-random-button";
 import { buildBracketMap } from "@/lib/bracket";
 import { buildPredictedStandings, type GroupMatchInput } from "@/lib/group-standings";
 import {
@@ -135,6 +136,7 @@ export default async function PartidosPage({ searchParams }: PageProps) {
   const defaultOpen = computeDefaultOpen(tabTree, now);
 
   const showGroupTree = activeTab === "grupos" && tabTree.groupStage.groups.length > 0;
+  const groupStageLocked = new Date(GROUP_STAGE_LOCK) <= now;
 
   const predictedGroups =
     activeTab === "grupos" && groupView === "clasificacion"
@@ -184,7 +186,10 @@ export default async function PartidosPage({ searchParams }: PageProps) {
           <GruposSubtabs view={groupView} />
           {groupView === "predicciones" ? (
             showGroupTree ? (
-              <PartidosTree tree={tabTree} defaultOpen={defaultOpen} />
+              <>
+                {!groupStageLocked && <FillRandomButton />}
+                <PartidosTree tree={tabTree} defaultOpen={defaultOpen} />
+              </>
             ) : (
               <p className="text-gray-400 text-center mt-8">
                 No hay partidos disponibles todavía.
