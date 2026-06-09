@@ -47,6 +47,7 @@ INSERT INTO players (name, team_id, position) VALUES
   ('Pedro Porro', (SELECT id FROM teams WHERE code = 'ESP'), 'Right-Back'),
   ('Ferrán Torres', (SELECT id FROM teams WHERE code = 'ESP'), 'Right Winger'),
   ('Carlos Soler', (SELECT id FROM teams WHERE code = 'ESP'), 'Central Midfield'),
+  ('Gavi', (SELECT id FROM teams WHERE code = 'ESP'), 'Central Midfield'),
   ('Pablo Fornals', (SELECT id FROM teams WHERE code = 'ESP'), 'Attacking Midfield'),
   ('Borja Iglesias', (SELECT id FROM teams WHERE code = 'ESP'), 'Centre-Forward'),
   ('Dani Olmo', (SELECT id FROM teams WHERE code = 'ESP'), 'Attacking Midfield'),
