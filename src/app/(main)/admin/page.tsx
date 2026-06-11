@@ -12,6 +12,7 @@ import { TeamAssignment } from "@/components/admin/team-assignment";
 import { BracketConfigEditor } from "@/components/admin/bracket-config";
 import type { ComboboxItem } from "@/components/search-combobox";
 import { AdminTabs } from "./tabs";
+import { countByUser } from "@/lib/admin-stats";
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -80,14 +81,7 @@ export default async function AdminPage() {
     .from("leaderboard")
     .select("user_id, total_points, rank");
 
-  const { data: allPredictions } = await adminSupabase
-    .from("match_predictions")
-    .select("user_id");
-
-  const predCountMap = new Map<string, number>();
-  (allPredictions ?? []).forEach((p: { user_id: string }) => {
-    predCountMap.set(p.user_id, (predCountMap.get(p.user_id) ?? 0) + 1);
-  });
+  const predCountMap = await countByUser(adminSupabase, "match_predictions");
 
   const leaderboardMap = new Map(
     (leaderboardRows ?? []).map((r: any) => [
