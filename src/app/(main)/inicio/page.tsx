@@ -95,7 +95,7 @@ export default async function InicioPage() {
     .select(`
       home_score, away_score,
       match:matches!match_results_match_id_fkey(
-        id, stage,
+        id, kickoff_at, stage,
         home_team:teams!matches_home_team_id_fkey(name, code),
         away_team:teams!matches_away_team_id_fkey(name, code)
       )
