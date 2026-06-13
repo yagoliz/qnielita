@@ -49,21 +49,21 @@ const history: LeaderboardHistoryEntry[] = [
 ];
 
 describe("buildRankingChartData", () => {
-  it("groups rank history by snapshot and marks the current user series", () => {
+  it("groups points history by snapshot and marks the current user series", () => {
     const chart = buildRankingChartData(history, "u2");
 
     expect(chart.points).toEqual([
       {
         snapshot_at: "2026-06-13T10:00:00.000Z",
         label: "13 jun, 12:00",
-        u1: 1,
-        u2: 2,
+        u1: 5,
+        u2: 3,
       },
       {
         snapshot_at: "2026-06-13T12:00:00.000Z",
         label: "13 jun, 14:00",
-        u1: 2,
-        u2: 1,
+        u1: 9,
+        u2: 10,
       },
     ]);
     expect(chart.series).toEqual([

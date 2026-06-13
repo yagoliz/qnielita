@@ -153,7 +153,7 @@ export function buildRankingChartData(
       snapshot_at: row.snapshot_at,
       label: formatSnapshotLabel(row.snapshot_at),
     };
-    point[row.user_id] = row.rank;
+    point[row.user_id] = row.total_points;
     snapshots.set(row.snapshot_at, point);
   }
 
