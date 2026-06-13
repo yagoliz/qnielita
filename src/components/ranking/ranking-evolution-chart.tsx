@@ -32,7 +32,11 @@ export function RankingEvolutionChart({ data }: { data: RankingChartData }) {
 
   return (
     <div className="h-52 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        initialDimension={{ width: 480, height: 184 }}
+      >
         <LineChart
           data={data.points}
           margin={{ top: 10, right: 12, bottom: 4, left: 0 }}
@@ -101,6 +105,7 @@ export function RankingEvolutionChart({ data }: { data: RankingChartData }) {
               );
             }}
           />
+          {/* Note for the future: monotone avoids step plot, stepAfter gets that type of look */}
           {data.series.map((serie) => {
             const isActive = serie.userId === activeId;
             return (
