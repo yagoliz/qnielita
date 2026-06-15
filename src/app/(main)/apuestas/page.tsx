@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { DeadlineBanner } from "@/components/deadline-banner";
 import { redirect } from "next/navigation";
 import { TournamentBetCard } from "@/components/tournament-bet-card";
@@ -34,12 +34,11 @@ async function loadComboboxData(supabase: Awaited<ReturnType<typeof createClient
 }
 
 async function TorneoTab() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (!user) redirect("/login");
+
+  const supabase = await createClient();
 
   const [{ teamItems, playerItems }, { data: configs }, { data: bets }] = await Promise.all([
     loadComboboxData(supabase),
@@ -73,12 +72,11 @@ async function TorneoTab() {
 }
 
 async function LocasTab() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (!user) redirect("/login");
+
+  const supabase = await createClient();
 
   const [{ teamItems, playerItems }, { data: customBets }, { data: answers }] = await Promise.all([
     loadComboboxData(supabase),

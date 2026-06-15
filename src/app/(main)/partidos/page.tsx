@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { DeadlineBanner } from "@/components/deadline-banner";
 import { redirect } from "next/navigation";
 import { Lock } from "lucide-react";
@@ -29,36 +29,34 @@ export default async function PartidosPage({ searchParams }: PageProps) {
   const groupView: GroupView =
     view === "clasificacion" ? "clasificacion" : "predicciones";
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (!user) redirect("/login");
 
-  const { data: matchesRaw } = await supabase
-    .from("matches")
-    .select(`
-      id, kickoff_at, venue, stage, group_id,
-      home_team:teams!matches_home_team_id_fkey(id, name, code),
-      away_team:teams!matches_away_team_id_fkey(id, name, code),
-      group:groups(name)
-    `)
-    .order("kickoff_at", { ascending: true });
+  const supabase = await createClient();
 
-  const { data: predictions } = await supabase
-    .from("match_predictions")
-    .select("match_id, home_score, away_score, points_earned")
-    .eq("user_id", user.id);
-
-  const { data: results } = await supabase
-    .from("match_results")
-    .select("match_id, home_score, away_score");
-
-  const { data: bracketConfig } = await supabase
-    .from("bracket_config")
-    .select("*")
-    .single();
+  const [
+    { data: matchesRaw },
+    { data: predictions },
+    { data: results },
+    { data: bracketConfig },
+  ] = await Promise.all([
+    supabase
+      .from("matches")
+      .select(`
+        id, kickoff_at, venue, stage, group_id,
+        home_team:teams!matches_home_team_id_fkey(id, name, code),
+        away_team:teams!matches_away_team_id_fkey(id, name, code),
+        group:groups(name)
+      `)
+      .order("kickoff_at", { ascending: true }),
+    supabase
+      .from("match_predictions")
+      .select("match_id, home_score, away_score, points_earned")
+      .eq("user_id", user.id),
+    supabase.from("match_results").select("match_id, home_score, away_score"),
+    supabase.from("bracket_config").select("*").single(),
+  ]);
 
   const GROUP_STAGE_LOCK = "2026-06-11T18:00:00Z";
 
@@ -91,20 +89,19 @@ export default async function PartidosPage({ searchParams }: PageProps) {
 
   let bracketData = null;
   if (activeTab === "eliminatorias" && bracketStatus !== "not_open") {
-    const { data: allTeams } = await supabase
-      .from("teams")
-      .select("id, name, code");
-
-    const { data: knockoutMatches } = await supabase
-      .from("matches")
-      .select("id, kickoff_at, stage, home_team_id, away_team_id")
-      .neq("stage", "group")
-      .order("kickoff_at");
-
-    const { data: bracketPredictions } = await supabase
-      .from("bracket_predictions")
-      .select("*")
-      .eq("user_id", user.id);
+    const [{ data: allTeams }, { data: knockoutMatches }, { data: bracketPredictions }] =
+      await Promise.all([
+        supabase.from("teams").select("id, name, code"),
+        supabase
+          .from("matches")
+          .select("id, kickoff_at, stage, home_team_id, away_team_id")
+          .neq("stage", "group")
+          .order("kickoff_at"),
+        supabase
+          .from("bracket_predictions")
+          .select("*")
+          .eq("user_id", user.id),
+      ]);
 
     const knockoutIds = (knockoutMatches ?? []).map((m: any) => m.id);
     const { data: knockoutResults } = await supabase

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { DeadlineBanner } from "@/components/deadline-banner";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { MatchPreviewCard } from "@/components/match-preview-card";
@@ -8,38 +8,73 @@ import { redirect } from "next/navigation";
 import { Trophy, AlertTriangle, Swords } from "lucide-react";
 
 export default async function InicioPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (!user) redirect("/login");
 
-  const allEntries = await fetchFullLeaderboard(supabase as any);
+  const supabase = await createClient();
+  const nowIso = new Date().toISOString();
+
+  // Independent queries — run them in a single parallel wave instead of
+  // stacking ~9 sequential round trips before the page can render.
+  const [
+    allEntries,
+    { data: upcomingMatches },
+    { data: allFutureMatches },
+    { data: myPredictions },
+    { data: bracketConfig },
+    { data: earliestTournamentLock },
+    { data: bracketPreds },
+    { data: recentResults },
+  ] = await Promise.all([
+    fetchFullLeaderboard(supabase as any),
+    supabase
+      .from("matches")
+      .select(`
+        id, kickoff_at, stage,
+        home_team:teams!matches_home_team_id_fkey(name, code),
+        away_team:teams!matches_away_team_id_fkey(name, code)
+      `)
+      .gt("kickoff_at", nowIso)
+      .order("kickoff_at", { ascending: true })
+      .limit(5),
+    supabase
+      .from("matches")
+      .select("id")
+      .eq("stage", "group")
+      .gt("kickoff_at", nowIso),
+    supabase
+      .from("match_predictions")
+      .select("match_id, home_score, away_score, points_earned")
+      .eq("user_id", user.id),
+    supabase.from("bracket_config").select("unlock_at, lock_at").single(),
+    supabase
+      .from("tournament_bet_config")
+      .select("lock_at")
+      .gt("lock_at", nowIso)
+      .order("lock_at", { ascending: true })
+      .limit(1)
+      .single(),
+    supabase
+      .from("bracket_predictions")
+      .select("match_id")
+      .eq("user_id", user.id),
+    supabase
+      .from("match_results")
+      .select(`
+        home_score, away_score,
+        match:matches!match_results_match_id_fkey(
+          id, kickoff_at, stage,
+          home_team:teams!matches_home_team_id_fkey(name, code),
+          away_team:teams!matches_away_team_id_fkey(name, code)
+        )
+      `)
+      .order("updated_at", { ascending: false })
+      .limit(5),
+  ]);
+
   const topEntries = allEntries.slice(0, 5);
-  const myRank = allEntries.find((e) => e.user_id === user!.id) ?? null;
-
-  const { data: upcomingMatches } = await supabase
-    .from("matches")
-    .select(`
-      id, kickoff_at, stage,
-      home_team:teams!matches_home_team_id_fkey(name, code),
-      away_team:teams!matches_away_team_id_fkey(name, code)
-    `)
-    .gt("kickoff_at", new Date().toISOString())
-    .order("kickoff_at", { ascending: true })
-    .limit(5);
-
-  const { data: allFutureMatches } = await supabase
-    .from("matches")
-    .select("id")
-    .eq("stage", "group")
-    .gt("kickoff_at", new Date().toISOString());
-
-  const { data: myPredictions } = await supabase
-    .from("match_predictions")
-    .select("match_id, home_score, away_score, points_earned")
-    .eq("user_id", user!.id);
+  const myRank = allEntries.find((e) => e.user_id === user.id) ?? null;
 
   const predictionsByMatch = new Map<
     number,
@@ -57,20 +92,7 @@ export default async function InicioPage() {
     (m: any) => !predictedIds.has(m.id)
   ).length;
 
-  const { data: bracketConfig } = await supabase
-    .from("bracket_config")
-    .select("unlock_at, lock_at")
-    .single();
-
   const GROUP_STAGE_LOCK = "2026-06-11T18:00:00Z";
-
-  const { data: earliestTournamentLock } = await supabase
-    .from("tournament_bet_config")
-    .select("lock_at")
-    .gt("lock_at", new Date().toISOString())
-    .order("lock_at", { ascending: true })
-    .limit(1)
-    .single();
 
   const deadlines: { label: string; targetDate: string }[] = [];
   if (new Date(GROUP_STAGE_LOCK) > new Date()) {
@@ -80,28 +102,10 @@ export default async function InicioPage() {
     deadlines.push({ label: "Cierre apuestas torneo", targetDate: earliestTournamentLock.lock_at });
   }
 
-  const { data: bracketPreds } = await supabase
-    .from("bracket_predictions")
-    .select("match_id")
-    .eq("user_id", user!.id);
-
   const hasBracket = (bracketPreds ?? []).length > 0;
   const bracketOpen = bracketConfig
     && new Date(bracketConfig.unlock_at) <= new Date()
     && new Date(bracketConfig.lock_at) > new Date();
-
-  const { data: recentResults } = await supabase
-    .from("match_results")
-    .select(`
-      home_score, away_score,
-      match:matches!match_results_match_id_fkey(
-        id, kickoff_at, stage,
-        home_team:teams!matches_home_team_id_fkey(name, code),
-        away_team:teams!matches_away_team_id_fkey(name, code)
-      )
-    `)
-    .order("updated_at", { ascending: false })
-    .limit(5);
 
   return (
     <div className="space-y-6">

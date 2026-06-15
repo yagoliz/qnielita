@@ -7,16 +7,15 @@ import {
   fetchFullLeaderboard,
   fetchLeaderboardHistory,
 } from "@/lib/leaderboard";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export default async function ClasificacionPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (!user) redirect("/login");
+
+  const supabase = await createClient();
 
   const [entries, history] = await Promise.all([
     fetchFullLeaderboard(supabase as any),
