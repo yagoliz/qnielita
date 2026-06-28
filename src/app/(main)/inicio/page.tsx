@@ -57,14 +57,16 @@ export default async function InicioPage() {
       .single(),
     supabase
       .from("bracket_predictions")
-      .select("match_id")
+      .select(
+        "match_id, predicted_home_team_id, predicted_away_team_id, home_score, away_score, team_points_earned, score_points_earned"
+      )
       .eq("user_id", user.id),
     supabase
       .from("match_results")
       .select(`
         home_score, away_score,
         match:matches!match_results_match_id_fkey(
-          id, kickoff_at, stage,
+          id, kickoff_at, stage, home_team_id, away_team_id,
           home_team:teams!matches_home_team_id_fkey(name, code),
           away_team:teams!matches_away_team_id_fkey(name, code)
         )
@@ -87,6 +89,41 @@ export default async function InicioPage() {
       points_earned: p.points_earned,
     });
   });
+  // Knockout predictions live in bracket_predictions, not match_predictions.
+  // Key them by match_id so the results cards can show the user's bracket pick.
+  const bracketPredsByMatch = new Map<
+    number,
+    {
+      predicted_home_team_id: number;
+      predicted_away_team_id: number;
+      home_score: number;
+      away_score: number;
+      team_points_earned: number;
+      score_points_earned: number;
+    }
+  >();
+  (bracketPreds ?? []).forEach((p: any) => {
+    bracketPredsByMatch.set(p.match_id, p);
+  });
+
+  // Resolve the prediction to display in a match card, orienting bracket picks
+  // to the actual match's home/away slots (the user may have projected the
+  // teams into the opposite slots).
+  function predictionForMatch(match: any) {
+    const direct = predictionsByMatch.get(match.id);
+    if (direct) return direct;
+    const bp = bracketPredsByMatch.get(match.id);
+    if (!bp) return null;
+    const flipped =
+      bp.predicted_home_team_id === match.away_team_id ||
+      bp.predicted_away_team_id === match.home_team_id;
+    return {
+      home_score: flipped ? bp.away_score : bp.home_score,
+      away_score: flipped ? bp.home_score : bp.away_score,
+      points_earned: bp.team_points_earned + bp.score_points_earned,
+    };
+  }
+
   const predictedIds = new Set(predictionsByMatch.keys());
   const pendingCount = (allFutureMatches ?? []).filter(
     (m: any) => !predictedIds.has(m.id)
@@ -202,7 +239,7 @@ export default async function InicioPage() {
                 <MatchPreviewCard
                   key={match.id}
                   match={match}
-                  prediction={predictionsByMatch.get(match.id) ?? null}
+                  prediction={predictionForMatch(match)}
                   result={{ home_score: r.home_score, away_score: r.away_score }}
                 />
               );
