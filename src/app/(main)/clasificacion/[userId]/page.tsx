@@ -1,5 +1,7 @@
+import { MatchPreviewCard } from "@/components/match-preview-card";
 import { RankingEvolutionChart } from "@/components/ranking/ranking-evolution-chart";
 import { UserRankingSummary } from "@/components/ranking/user-ranking-summary";
+import { orientBracketPrediction } from "@/lib/bracket-prediction-display";
 import {
   buildRankingChartData,
   fetchFullLeaderboard,
@@ -24,7 +26,12 @@ export default async function UserDetailPage({
 
   if (!profile) notFound();
 
-  const [allEntries, history, { data: predictions }] = await Promise.all([
+  const [
+    allEntries,
+    history,
+    { data: predictions },
+    { data: bracketPredictions },
+  ] = await Promise.all([
     fetchFullLeaderboard(supabase as any),
     fetchUserLeaderboardHistory(supabase as any, userId),
     supabase
@@ -40,10 +47,74 @@ export default async function UserDetailPage({
       `)
       .eq("user_id", userId)
       .not("points_earned", "is", null),
+    supabase
+      .from("bracket_predictions")
+      .select(`
+        predicted_home_team_id, predicted_away_team_id,
+        home_score, away_score, team_points_earned, score_points_earned,
+        match:matches!bracket_predictions_match_id_fkey(
+          id, kickoff_at, stage, home_team_id, away_team_id,
+          home_team:teams!matches_home_team_id_fkey(name, code),
+          away_team:teams!matches_away_team_id_fkey(name, code),
+          result:match_results(home_score, away_score)
+        )
+      `)
+      .eq("user_id", userId),
   ]);
 
   const leaderboardEntry = allEntries.find((entry) => entry.user_id === userId) ?? null;
   const chartData = buildRankingChartData(history, userId);
+
+  // Merge resolved group-stage picks (match_predictions) with resolved knockout
+  // picks (bracket_predictions), most recent match on top.
+  type ResolvedItem = {
+    match: any;
+    prediction: { home_score: number; away_score: number; points_earned: number };
+    result: { home_score: number; away_score: number };
+  };
+
+  // `match_results.match_id` is the PK, so PostgREST embeds the result as a
+  // single object (older versions may return a one-element array) — normalize.
+  const resultOf = (match: any) => {
+    const r = match?.result;
+    return (Array.isArray(r) ? r[0] : r) ?? null;
+  };
+
+  const groupItems: ResolvedItem[] = (predictions ?? [])
+    .map((pred: any) => {
+      const match = pred.match;
+      const result = resultOf(match);
+      if (!match || !result) return null;
+      return {
+        match,
+        prediction: {
+          home_score: pred.home_score,
+          away_score: pred.away_score,
+          points_earned: pred.points_earned,
+        },
+        result,
+      };
+    })
+    .filter(Boolean) as ResolvedItem[];
+
+  const knockoutItems: ResolvedItem[] = (bracketPredictions ?? [])
+    .map((bp: any) => {
+      const match = bp.match;
+      const result = resultOf(match);
+      if (!match || !result) return null;
+      return {
+        match,
+        prediction: orientBracketPrediction(bp, match),
+        result,
+      };
+    })
+    .filter(Boolean) as ResolvedItem[];
+
+  const resolvedItems = [...groupItems, ...knockoutItems].sort(
+    (a, b) =>
+      new Date(b.match.kickoff_at).getTime() -
+      new Date(a.match.kickoff_at).getTime()
+  );
 
   return (
     <div className="space-y-5">
@@ -77,34 +148,20 @@ export default async function UserDetailPage({
         </h2>
 
         <div className="space-y-2">
-          {(predictions ?? []).map((pred: any) => {
-            const match = pred.match;
-            const result = match?.result?.[0];
-            return (
-              <div
-                key={match?.id}
-                className="rounded-2xl border border-gray-100 bg-white p-4 text-sm shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-bold">
-                      {match?.home_team?.code} {pred.home_score}-{pred.away_score} {match?.away_team?.code}
-                    </p>
-                    {result && (
-                      <p className="mt-1 text-xs text-gray-400">
-                        Resultado real: {result.home_score}-{result.away_score}
-                      </p>
-                    )}
-                  </div>
-                  <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-black text-green-700">
-                    +{pred.points_earned} pts
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+          {resolvedItems.map((item) => (
+            <MatchPreviewCard
+              key={item.match.id}
+              match={item.match}
+              prediction={item.prediction}
+              result={{
+                home_score: item.result.home_score,
+                away_score: item.result.away_score,
+              }}
+              pointsVariant="badge"
+            />
+          ))}
 
-          {(!predictions || predictions.length === 0) && (
+          {resolvedItems.length === 0 && (
             <p className="mt-4 text-center text-sm text-gray-400">
               Todavía no hay predicciones resueltas.
             </p>

@@ -28,6 +28,12 @@ type MatchPreviewCardProps = {
     away_score: number;
   } | null;
   href?: string;
+  /**
+   * Where to render the earned-points indicator:
+   * - "inline" (default): green "+N pts" next to the Resultado line.
+   * - "badge": rounded green badge in the card's top-right corner.
+   */
+  pointsVariant?: "inline" | "badge";
 };
 
 function ScoreBox({ value }: { value: number | null }) {
@@ -43,8 +49,11 @@ export function MatchPreviewCard({
   prediction,
   result,
   href,
+  pointsVariant = "inline",
 }: MatchPreviewCardProps) {
   const stageLabel = match.stage === "group" ? "Grupos" : match.stage;
+  const showBadge =
+    pointsVariant === "badge" && prediction?.points_earned != null;
 
   const inner = (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -52,9 +61,16 @@ export function MatchPreviewCard({
         <span className="text-xs font-medium text-gray-400 uppercase">
           {stageLabel}
         </span>
-        <span className="text-xs text-gray-400">
-          {formatKickoff(match.kickoff_at)}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400">
+            {formatKickoff(match.kickoff_at)}
+          </span>
+          {showBadge && (
+            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-black text-green-700">
+              +{prediction!.points_earned} pts
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-2">
@@ -86,7 +102,7 @@ export function MatchPreviewCard({
           <span className="text-xs text-gray-500">
             Resultado: {result.home_score} - {result.away_score}
           </span>
-          {prediction?.points_earned != null && (
+          {pointsVariant === "inline" && prediction?.points_earned != null && (
             <span className="ml-2 text-xs font-bold text-green-600">
               +{prediction.points_earned} pts
             </span>

@@ -3,6 +3,7 @@ import { DeadlineBanner } from "@/components/deadline-banner";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { MatchPreviewCard } from "@/components/match-preview-card";
 import { fetchFullLeaderboard } from "@/lib/leaderboard";
+import { orientBracketPrediction } from "@/lib/bracket-prediction-display";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Trophy, AlertTriangle, Swords } from "lucide-react";
@@ -114,14 +115,7 @@ export default async function InicioPage() {
     if (direct) return direct;
     const bp = bracketPredsByMatch.get(match.id);
     if (!bp) return null;
-    const flipped =
-      bp.predicted_home_team_id === match.away_team_id ||
-      bp.predicted_away_team_id === match.home_team_id;
-    return {
-      home_score: flipped ? bp.away_score : bp.home_score,
-      away_score: flipped ? bp.home_score : bp.away_score,
-      points_earned: bp.team_points_earned + bp.score_points_earned,
-    };
+    return orientBracketPrediction(bp, match);
   }
 
   const predictedIds = new Set(predictionsByMatch.keys());
