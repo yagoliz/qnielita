@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { TeamFlag } from "./team-flag";
+import { TeamComparisonCell } from "./bracket/team-comparison-cell";
+import type { BracketComparison } from "@/lib/bracket-team-comparison";
 
 function formatKickoff(iso: string) {
   return new Date(iso).toLocaleString("es-ES", {
@@ -34,6 +36,8 @@ type MatchPreviewCardProps = {
    * - "badge": rounded green badge in the card's top-right corner.
    */
   pointsVariant?: "inline" | "badge";
+  /** When present, render predicted teams with green/red actual-team pills. */
+  comparison?: BracketComparison | null;
 };
 
 function ScoreBox({ value }: { value: number | null }) {
@@ -50,6 +54,7 @@ export function MatchPreviewCard({
   result,
   href,
   pointsVariant = "inline",
+  comparison,
 }: MatchPreviewCardProps) {
   const stageLabel = match.stage === "group" ? "Grupos" : match.stage;
   const showBadge =
@@ -74,13 +79,17 @@ export function MatchPreviewCard({
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <div className="flex-1 text-right">
-          <p className="font-semibold text-sm">{match.home_team?.name ?? "?"}</p>
-          <div className="flex items-center justify-end gap-1.5">
-            <span className="text-xs text-gray-400">{match.home_team?.code ?? ""}</span>
-            <TeamFlag code={match.home_team?.code} />
+        {comparison ? (
+          <TeamComparisonCell slot={comparison.home} align="right" showFlag />
+        ) : (
+          <div className="flex-1 text-right">
+            <p className="font-semibold text-sm">{match.home_team?.name ?? "?"}</p>
+            <div className="flex items-center justify-end gap-1.5">
+              <span className="text-xs text-gray-400">{match.home_team?.code ?? ""}</span>
+              <TeamFlag code={match.home_team?.code} />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex items-center gap-1">
           <ScoreBox value={prediction?.home_score ?? null} />
@@ -88,13 +97,17 @@ export function MatchPreviewCard({
           <ScoreBox value={prediction?.away_score ?? null} />
         </div>
 
-        <div className="flex-1">
-          <p className="font-semibold text-sm">{match.away_team?.name ?? "?"}</p>
-          <div className="flex items-center gap-1.5">
-            <TeamFlag code={match.away_team?.code} />
-            <span className="text-xs text-gray-400">{match.away_team?.code ?? ""}</span>
+        {comparison ? (
+          <TeamComparisonCell slot={comparison.away} align="left" showFlag />
+        ) : (
+          <div className="flex-1">
+            <p className="font-semibold text-sm">{match.away_team?.name ?? "?"}</p>
+            <div className="flex items-center gap-1.5">
+              <TeamFlag code={match.away_team?.code} />
+              <span className="text-xs text-gray-400">{match.away_team?.code ?? ""}</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {result && (

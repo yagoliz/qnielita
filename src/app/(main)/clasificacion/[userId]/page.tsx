@@ -1,7 +1,12 @@
 import { MatchPreviewCard } from "@/components/match-preview-card";
 import { RankingEvolutionChart } from "@/components/ranking/ranking-evolution-chart";
 import { UserRankingSummary } from "@/components/ranking/user-ranking-summary";
-import { orientBracketPrediction } from "@/lib/bracket-prediction-display";
+import {
+  buildBracketTeamComparison,
+  isRealTeamCode,
+  type BracketComparison,
+  type ComparisonTeam,
+} from "@/lib/bracket-team-comparison";
 import {
   buildRankingChartData,
   fetchFullLeaderboard,
@@ -31,6 +36,7 @@ export default async function UserDetailPage({
     history,
     { data: predictions },
     { data: bracketPredictions },
+    { data: teamsRows },
   ] = await Promise.all([
     fetchFullLeaderboard(supabase as any),
     fetchUserLeaderboardHistory(supabase as any, userId),
@@ -60,10 +66,16 @@ export default async function UserDetailPage({
         )
       `)
       .eq("user_id", userId),
+    supabase.from("teams").select("id, name, code"),
   ]);
 
   const leaderboardEntry = allEntries.find((entry) => entry.user_id === userId) ?? null;
   const chartData = buildRankingChartData(history, userId);
+
+  const teamsById: Record<number, ComparisonTeam> = {};
+  for (const tm of (teamsRows ?? []) as ComparisonTeam[]) {
+    teamsById[tm.id] = tm;
+  }
 
   // Merge resolved group-stage picks (match_predictions) with resolved knockout
   // picks (bracket_predictions), most recent match on top.
@@ -71,6 +83,7 @@ export default async function UserDetailPage({
     match: any;
     prediction: { home_score: number; away_score: number; points_earned: number };
     result: { home_score: number; away_score: number };
+    comparison?: BracketComparison;
   };
 
   // `match_results.match_id` is the PK, so PostgREST embeds the result as a
@@ -102,10 +115,27 @@ export default async function UserDetailPage({
       const match = bp.match;
       const result = resultOf(match);
       if (!match || !result) return null;
+
+      const predHome = teamsById[bp.predicted_home_team_id] ?? null;
+      const predAway = teamsById[bp.predicted_away_team_id] ?? null;
+      const aHome: ComparisonTeam | null =
+        match.home_team && isRealTeamCode(match.home_team.code)
+          ? { id: match.home_team_id, name: match.home_team.name, code: match.home_team.code }
+          : null;
+      const aAway: ComparisonTeam | null =
+        match.away_team && isRealTeamCode(match.away_team.code)
+          ? { id: match.away_team_id, name: match.away_team.name, code: match.away_team.code }
+          : null;
+
       return {
         match,
-        prediction: orientBracketPrediction(bp, match),
+        prediction: {
+          home_score: bp.home_score,
+          away_score: bp.away_score,
+          points_earned: bp.team_points_earned + bp.score_points_earned,
+        },
         result,
+        comparison: buildBracketTeamComparison(predHome, predAway, aHome, aAway),
       };
     })
     .filter(Boolean) as ResolvedItem[];
@@ -158,6 +188,7 @@ export default async function UserDetailPage({
                 away_score: item.result.away_score,
               }}
               pointsVariant="badge"
+              comparison={item.comparison}
             />
           ))}
 

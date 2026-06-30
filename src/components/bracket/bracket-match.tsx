@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { ScoreInput } from "../score-input";
+import { TeamComparisonCell } from "./team-comparison-cell";
 import { KNOCKOUT_LABELS, type KnockoutStage } from "@/lib/match-tree";
+import type { BracketComparison } from "@/lib/bracket-team-comparison";
 
 function formatKickoff(iso: string) {
   return new Date(iso).toLocaleString("es-ES", {
@@ -25,6 +27,7 @@ export type BracketMatchData = {
   result?: { home_score: number; away_score: number } | null;
   teamPointsEarned?: number;
   scorePointsEarned?: number;
+  comparison?: BracketComparison;
 };
 
 type Props = {
@@ -83,10 +86,14 @@ export function BracketMatch({ match, locked, onScoreChange, onPenaltyChange, on
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <div className="flex-1 text-right">
-          <p className="font-semibold text-sm">{match.homeTeam!.name}</p>
-          <p className="text-xs text-gray-400">{match.homeTeam!.code}</p>
-        </div>
+        {match.comparison ? (
+          <TeamComparisonCell slot={match.comparison.home} align="right" />
+        ) : (
+          <div className="flex-1 text-right">
+            <p className="font-semibold text-sm">{match.homeTeam!.name}</p>
+            <p className="text-xs text-gray-400">{match.homeTeam!.code}</p>
+          </div>
+        )}
 
         <div className="flex items-center gap-1">
           <ScoreInput
@@ -104,10 +111,14 @@ export function BracketMatch({ match, locked, onScoreChange, onPenaltyChange, on
           />
         </div>
 
-        <div className="flex-1">
-          <p className="font-semibold text-sm">{match.awayTeam!.name}</p>
-          <p className="text-xs text-gray-400">{match.awayTeam!.code}</p>
-        </div>
+        {match.comparison ? (
+          <TeamComparisonCell slot={match.comparison.away} align="left" />
+        ) : (
+          <div className="flex-1">
+            <p className="font-semibold text-sm">{match.awayTeam!.name}</p>
+            <p className="text-xs text-gray-400">{match.awayTeam!.code}</p>
+          </div>
+        )}
       </div>
 
       {isTied && !locked && (

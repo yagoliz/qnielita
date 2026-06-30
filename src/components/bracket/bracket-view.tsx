@@ -10,6 +10,11 @@ import {
   cascadeLoser,
 } from "@/lib/bracket";
 import { KNOCKOUT_STAGE_ORDER, type KnockoutStage } from "@/lib/match-tree";
+import {
+  buildBracketTeamComparison,
+  isRealTeamCode,
+  type BracketComparison,
+} from "@/lib/bracket-team-comparison";
 import type { BracketMatchData } from "./bracket-match";
 
 type Team = { id: number; name: string; code: string };
@@ -253,18 +258,30 @@ export function BracketView({
       const pred = predMap.get(m.id);
       const result = resultMap.get(m.id);
 
+      let comparison: BracketComparison | undefined;
+      if (locked) {
+        const predHome = pred ? teamsById[pred.predicted_home_team_id] ?? null : null;
+        const predAway = pred ? teamsById[pred.predicted_away_team_id] ?? null : null;
+        const aHomeRaw = teamsById[m.home_team_id] ?? null;
+        const aAwayRaw = teamsById[m.away_team_id] ?? null;
+        const aHome = aHomeRaw && isRealTeamCode(aHomeRaw.code) ? aHomeRaw : null;
+        const aAway = aAwayRaw && isRealTeamCode(aAwayRaw.code) ? aAwayRaw : null;
+        comparison = buildBracketTeamComparison(predHome, predAway, aHome, aAway);
+      }
+
       const entry: BracketMatchData = {
         matchId: m.id,
         stage: m.stage,
         kickoffAt: m.kickoff_at,
-        homeTeam: teams.home,
-        awayTeam: teams.away,
+        homeTeam: locked ? comparison?.home.predicted ?? teams.home : teams.home,
+        awayTeam: locked ? comparison?.away.predicted ?? teams.away : teams.away,
         homeScore: s.homeScore,
         awayScore: s.awayScore,
         penaltyWinner: s.penaltyWinner,
         result: result ?? null,
         teamPointsEarned: pred?.team_points_earned ?? 0,
         scorePointsEarned: pred?.score_points_earned ?? 0,
+        comparison,
       };
 
       const list = map.get(stage) ?? [];
@@ -272,7 +289,7 @@ export function BracketView({
       map.set(stage, list);
     }
     return map;
-  }, [matches, state, resolvedTeams, predMap, resultMap]);
+  }, [matches, state, resolvedTeams, predMap, resultMap, locked, teamsById]);
 
   const hasExisting = existingPredictions.length > 0;
 
